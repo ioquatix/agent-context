@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
 	spec.version = Agent::Context::VERSION
 	
 	spec.summary = "Install and manage context files from Ruby gems."
-	spec.authors = ["Shopify Inc."]
+	spec.authors = ["Samuel Williams", "Shopify Inc."]
 	spec.license = "MIT"
 	
 	spec.cert_chain  = ["release.cert"]
