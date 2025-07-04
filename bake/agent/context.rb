@@ -10,7 +10,7 @@ include Agent::Context
 def initialize(context)
 	super(context)
 	
-	@helper = Helper.new
+	@helper = Helper.new(root: context.root)
 end
 
 attr :helper
