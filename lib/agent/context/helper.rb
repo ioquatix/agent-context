@@ -10,7 +10,15 @@ require "pathname"
 
 module Agent
 	module Context
+		# Helper class for managing context files from Ruby gems.
+		# 
+		# This class provides methods to find, list, show, and install context files
+		# from gems that provide them in a `context/` directory.
 		class Helper
+			# Initialize a new Helper instance.
+			#
+			# @parameter root [String] The root directory to work from (default: current directory).
+			# @parameter specifications [Gem::Specification] The gem specifications to search (default: all installed gems).
 			def initialize(root: Dir.pwd, specifications: ::Gem::Specification)
 				@root = root
 				@context_path = ".context"
@@ -38,7 +46,7 @@ module Agent
 				gems_with_context
 			end
 				
-			# Find a specific gem with context
+			# Find a specific gem with context.
 			def find_gem_with_context(gem_name)
 				spec = @specifications.find { |s| s.name == gem_name }
 				return nil unless spec
@@ -56,7 +64,7 @@ module Agent
 				end
 			end
 				
-			# List context files for a gem
+			# List context files for a gem.
 			def list_context_files(gem_name)
 				gem = find_gem_with_context(gem_name)
 				return nil unless gem
@@ -64,12 +72,12 @@ module Agent
 				Dir.glob(File.join(gem[:path], "**/*")).select { |f| File.file?(f) }
 			end
 				
-			# Show content of a specific context file
+			# Show content of a specific context file.
 			def show_context_file(gem_name, file_name)
 				gem = find_gem_with_context(gem_name)
 				return nil unless gem
 					
-				# Try to find the file with or without extension
+				# Try to find the file with or without extension:
 				possible_paths = [
 						File.join(gem[:path], file_name),
 						File.join(gem[:path], "#{file_name}.md"),
@@ -82,7 +90,7 @@ module Agent
 				File.read(file_path)
 			end
 				
-			# Install context from a specific gem
+			# Install context from a specific gem.
 			def install_gem_context(gem_name)
 				gem = find_gem_with_context(gem_name)
 				return false unless gem
@@ -90,13 +98,13 @@ module Agent
 				target_path = File.join(@context_path, gem_name)
 				FileUtils.mkdir_p(target_path)
 					
-				# Copy all files from the gem's context directory
+				# Copy all files from the gem's context directory:
 				FileUtils.cp_r(File.join(gem[:path], "."), target_path)
 					
 				true
 			end
 				
-			# Install context from all gems
+			# Install context from all gems.
 			def install_all_context(skip_local: true)
 				gems = find_gems_with_context(skip_local: skip_local)
 				installed = []

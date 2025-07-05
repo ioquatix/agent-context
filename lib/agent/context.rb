@@ -5,3 +5,10 @@
 
 require_relative "context/version"
 require_relative "context/helper" 
+
+# @namespace
+module Agent
+	# @namespace
+	module Context
+	end
+end
