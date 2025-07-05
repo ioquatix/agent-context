@@ -10,7 +10,13 @@ This gem allows you to install and manage context files from other gems. Gems ca
 
 ## Context
 
-This gem provides it's own context files in `context` and external dependencies in `.context`:
+This gem provides its own context files in the `context/` directory, including:
+
+- `adding-context.md` - Guide for adding context files to gems.
+- `examples.md` - Examples of context file usage.
+- `getting-started.md` - Getting started guide.
+
+When you install context from other gems, they will be placed in the `.context/` directory.
 
 ## Usage
 
