@@ -74,7 +74,7 @@ To provide context files in your gem, create a `context/` directory in your gem'
     ├── lib/
     └── your-gem.gemspec
 
-Context files can be in any format, but `.md` and `.md` files are commonly used for documentation.
+Context files can be in any format, but markdown (`.md`) files are commonly used for documentation.
 
 ## See Also
 
