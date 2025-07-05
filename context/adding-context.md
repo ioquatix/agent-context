@@ -1,7 +1,3 @@
----
-description: When creating or updating a gem's public interface.
-alwaysApply: false
----
 # Adding Context to Your Gem
 
 ## How to provide context in your gem
@@ -13,9 +9,9 @@ In your gem's root directory, create a `context/` folder:
 ```
 your-gem/
 ├── context/
-│   ├── getting-started.mdc
-│   ├── configuration.mdc
-│   └── troubleshooting.mdc
+│   ├── getting-started.md
+│   ├── configuration.md
+│   └── troubleshooting.md
 ├── lib/
 └── your-gem.gemspec
 ```
@@ -24,12 +20,12 @@ your-gem/
 
 Create files with helpful information. Common types include:
 
-- **getting-started.mdc** - Quick start guide
-- **configuration.mdc** - Configuration options and examples
-- **troubleshooting.mdc** - Common issues and solutions
-- **migration.mdc** - Migration guides between versions
-- **performance.mdc** - Performance tips and best practices
-- **security.mdc** - Security considerations
+- **getting-started.md** - Quick start guide
+- **configuration.md** - Configuration options and examples
+- **troubleshooting.md** - Common issues and solutions
+- **migration.md** - Migration guides between versions
+- **performance.md** - Performance tips and best practices
+- **security.md** - Security considerations
 
 ### 3. Document your context
 
@@ -45,13 +41,13 @@ bake agent:context:install --gem your-gem-name
 ```
 
 Available context files:
-- `getting-started.mdc` - Quick start guide
-- `configuration.mdc` - Configuration options
+- `getting-started.md` - Quick start guide
+- `configuration.md` - Configuration options
 ```
 
 ### 4. File format
 
-Context files can be in any format, but `.mdc` and `.md` are commonly used for documentation. The content should be:
+Context files can be in any format, but `.md` and `.md` are commonly used for documentation. The content should be:
 
 - **Practical** - Include real examples
 - **Focused** - One topic per file
@@ -98,9 +94,9 @@ In your gem's root directory, create a `context/` folder:
 ```
 your-gem/
 ├── context/
-│   ├── getting-started.mdc
-│   ├── configuration.mdc
-│   └── troubleshooting.mdc
+│   ├── getting-started.md
+│   ├── configuration.md
+│   └── troubleshooting.md
 ├── lib/
 └── your-gem.gemspec
 ```
@@ -109,12 +105,12 @@ your-gem/
 
 Create files with helpful information. Common types include:
 
-- **getting-started.mdc** - Quick start guide
-- **configuration.mdc** - Configuration options and examples
-- **troubleshooting.mdc** - Common issues and solutions
-- **migration.mdc** - Migration guides between versions
-- **performance.mdc** - Performance tips and best practices
-- **security.mdc** - Security considerations
+- **getting-started.md** - Quick start guide
+- **configuration.md** - Configuration options and examples
+- **troubleshooting.md** - Common issues and solutions
+- **migration.md** - Migration guides between versions
+- **performance.md** - Performance tips and best practices
+- **security.md** - Security considerations
 
 ### 3. Document your context
 
@@ -128,7 +124,7 @@ This gem provides additional context files that can be installed using `bake age
 
 ### 4. File format
 
-Context files can be in any format, but `.mdc` and `.md` are commonly used for documentation. The content should be:
+Context files can be in any format, but `.md` and `.md` are commonly used for documentation. The content should be:
 
 - **Practical** - Include real examples
 - **Focused** - One topic per file

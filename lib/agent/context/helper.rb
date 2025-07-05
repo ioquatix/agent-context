@@ -72,7 +72,7 @@ module Agent
 				# Try to find the file with or without extension
 				possible_paths = [
 						File.join(gem[:path], file_name),
-						File.join(gem[:path], "#{file_name}.mdc"),
+						File.join(gem[:path], "#{file_name}.md"),
 						File.join(gem[:path], "#{file_name}.md")
 					]
 					

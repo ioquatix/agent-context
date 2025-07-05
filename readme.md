@@ -68,13 +68,13 @@ To provide context files in your gem, create a `context/` directory in your gem'
 
     your-gem/
     ├── context/
-    │   ├── thread-safety.mdc
-    │   ├── performance.mdc
-    │   └── migration-guide.mdc
+    │   ├── thread-safety.md
+    │   ├── performance.md
+    │   └── migration-guide.md
     ├── lib/
     └── your-gem.gemspec
 
-Context files can be in any format, but `.mdc` and `.md` files are commonly used for documentation.
+Context files can be in any format, but `.md` and `.md` files are commonly used for documentation.
 
 ## See Also
 

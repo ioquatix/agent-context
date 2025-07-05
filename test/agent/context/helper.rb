@@ -18,15 +18,15 @@ describe Agent::Context::Helper do
 		def around
 			# Create a fake gem with context
 			FileUtils.mkdir_p(context_path)
-			File.write(File.join(context_path, "getting-started.mdc"), "# Getting Started\n\nThis is a test.")
-			File.write(File.join(context_path, "configuration.mdc"), "# Configuration\n\nConfigure your gem.")
+			File.write(File.join(context_path, "getting-started.md"), "# Getting Started\n\nThis is a test.")
+			File.write(File.join(context_path, "configuration.md"), "# Configuration\n\nConfigure your gem.")
 			
 			# Create a real Gem::Specification for our fake gem
 			fake_spec = ::Gem::Specification.new do |spec|
 				spec.name = "fake-gem"
 				spec.version = "1.0.0"
 				spec.summary = "A fake gem for testing"
-				spec.files = ["context/getting-started.mdc", "context/configuration.mdc"]
+				spec.files = ["context/getting-started.md", "context/configuration.md"]
 			end
 			
 			# Set the full_gem_path directly
@@ -66,8 +66,8 @@ describe Agent::Context::Helper do
 			files = helper.list_context_files("fake-gem")
 			
 			expect(files.length).to be == 2
-			expect(files).to be(:include?, File.join(context_path, "getting-started.mdc"))
-			expect(files).to be(:include?, File.join(context_path, "configuration.mdc"))
+			expect(files).to be(:include?, File.join(context_path, "getting-started.md"))
+			expect(files).to be(:include?, File.join(context_path, "configuration.md"))
 		end
 		
 		it "can show content of a specific context file" do
@@ -76,9 +76,9 @@ describe Agent::Context::Helper do
 			expect(content).to be == "# Getting Started\n\nThis is a test."
 		end
 		
-		it "can show content with .mdc extension" do
+		it "can show content with .md extension" do
 			helper = subject.new(specifications: @specifications)
-			content = helper.show_context_file("fake-gem", "getting-started.mdc")
+			content = helper.show_context_file("fake-gem", "getting-started.md")
 			expect(content).to be == "# Getting Started\n\nThis is a test."
 		end
 		
@@ -108,11 +108,11 @@ describe Agent::Context::Helper do
 				expect(result).to be_truthy
 				
 				# Check that files were copied
-				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "getting-started.mdc"))
-				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "configuration.mdc"))
+				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "getting-started.md"))
+				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "configuration.md"))
 				
 				# Check content
-				content = File.read(File.join(@target_path, "fake-gem", "getting-started.mdc"))
+				content = File.read(File.join(@target_path, "fake-gem", "getting-started.md"))
 				expect(content).to be == "# Getting Started\n\nThis is a test."
 			end
 			
@@ -130,8 +130,8 @@ describe Agent::Context::Helper do
 				expect(installed).to be(:include?, "fake-gem")
 				
 				# Check that files were copied
-				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "getting-started.mdc"))
-				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "configuration.mdc"))
+				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "getting-started.md"))
+				expect(File).to be(:exist?, File.join(@target_path, "fake-gem", "configuration.md"))
 			end
 		end
 	end

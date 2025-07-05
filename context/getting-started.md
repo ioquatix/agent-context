@@ -1,8 +1,3 @@
----
-description: Getting started with agent-context.
-alwaysApply: false
----
-
 # Getting Started
 
 ## What is this?
@@ -41,10 +36,10 @@ For example:
 your-project/
 ├── .context/
 │   ├── async/
-│   │   ├── thread-safety.mdc
-│   │   └── performance.mdc
+│   │   ├── thread-safety.md
+│   │   └── performance.md
 │   └── rack/
-│       └── middleware.mdc
+│       └── middleware.md
 ```
 
 ## Why use this?

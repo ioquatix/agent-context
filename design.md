@@ -16,7 +16,7 @@ Context files are treated as a first-class part of a gem's public interface, alo
 
 ### 2. Machine-Readable, Human-Friendly
 
-Context files use `.mdc` (Markdown Context) format, which combines:
+Context files use `.md` (Markdown Context) format, which combines:
 - **Human readability**: Standard Markdown for easy authoring and reading.
 - **Machine structure**: YAML frontmatter for metadata and organization.
 - **Extensibility**: Can include code examples, diagrams, and structured data.
@@ -80,8 +80,8 @@ alwaysApply: false                  # Whether to always apply this context
 
 ### File Naming Conventions
 
-- **`.mdc` extension**: Indicates Markdown Context files.
-- **Descriptive names**: `thread-safety.mdc`, `performance.mdc`, `migration-guide.mdc`.
+- **`.md` extension**: Indicates Markdown Context files.
+- **Descriptive names**: `thread-safety.md`, `performance.md`, `migration-guide.md`.
 - **Fallback support**: Commands can find files with or without extensions.
 
 ## Installation Strategy
@@ -102,10 +102,10 @@ alwaysApply: false                  # Whether to always apply this context
 project/
 ├── .context/           # Private working directory
 │   ├── async/         # Context from async gem
-│   │   ├── thread-safety.mdc
-│   │   └── performance.mdc
+│   │   ├── thread-safety.md
+│   │   └── performance.md
 │   └── rails/         # Context from rails gem
-│       └── configuration.mdc
+│       └── configuration.md
 ```
 
 ## Use Cases and Workflows
@@ -113,7 +113,7 @@ project/
 ### For Gem Authors
 
 1. **Create Context Directory**: Add `context/` to gem root.
-2. **Write Context Files**: Create `.mdc` files with documentation, examples, guides.
+2. **Write Context Files**: Create `.md` files with documentation, examples, guides.
 3. **Version and Distribute**: Context files are included in gem releases.
 
 ### For Developers
@@ -132,7 +132,7 @@ project/
 
 ### Potential Enhancements
 
-- **Context Validation**: Validate `.mdc` file structure and content.
+- **Context Validation**: Validate `.md` file structure and content.
 - **Context Indexing**: Create searchable index of installed context.
 - **Context Updates**: Mechanism to update context when gems are updated.
 - **Context Dependencies**: Allow context files to reference other context files.

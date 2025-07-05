@@ -1,8 +1,3 @@
----
-description: Practical examples of using agent-context.
-alwaysApply: false
----
-
 # Practical Examples
 
 ## Example 1: Installing context from a web framework
@@ -64,10 +59,10 @@ ls .context/
 bake agent:context:install --gem the-gem-you're-using
 
 # Read the getting started guide
-cat .context/the-gem-you're-using/getting-started.mdc
+cat .context/the-gem-you're-using/getting-started.md
 
 # Check performance tips
-cat .context/the-gem-you're-using/performance.mdc
+cat .context/the-gem-you're-using/performance.md
 ```
 
 ## Real-world scenario
@@ -79,10 +74,10 @@ You're building a Rails API and want to understand how to properly configure Pum
 bake agent:context:install --gem puma
 
 # Read the configuration guide
-cat .context/puma/configuration.mdc
+cat .context/puma/configuration.md
 
 # Check performance recommendations
-cat .context/puma/performance.mdc
+cat .context/puma/performance.md
 ```
 
 This gives you practical, gem-specific guidance that might not be in the main documentation.
