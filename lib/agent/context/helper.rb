@@ -96,6 +96,10 @@ module Agent
 				return false unless gem
 					
 				target_path = File.join(@context_path, gem_name)
+				
+				# Remove old package directory if it exists to ensure clean install
+				FileUtils.rm_rf(target_path) if Dir.exist?(target_path)
+				
 				FileUtils.mkdir_p(target_path)
 					
 				# Copy all files from the gem's context directory:
