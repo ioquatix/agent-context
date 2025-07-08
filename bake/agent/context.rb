@@ -5,6 +5,7 @@
 # Copyright, 2025, by Samuel Williams.
 
 require_relative "../../lib/agent/context/helper"
+require_relative "../../lib/agent/context/index"
 
 include Agent::Context
 
@@ -73,4 +74,10 @@ def install(gem: nil)
 			puts "No gems with context found"
 		end
 	end
-end 
+end
+
+# Generate the documentation index from installed context files.
+def index
+	index = Agent::Context::Index.new(@helper.context_path)
+	index.write_to_file
+end

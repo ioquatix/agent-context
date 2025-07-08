@@ -24,6 +24,8 @@ module Agent
 				@context_path = ".context"
 				@specifications = specifications
 			end
+			
+			attr_reader :context_path
 				
 			# Find all gems that have a context directory
 			def find_gems_with_context(skip_local: true)
