@@ -1,22 +1,38 @@
 # Agent::Context
 
-Provides tools for installing and managing context files from Ruby gems for AI agents.
+Provides tools for installing and managing context files from Ruby gems for AI agents, and generating `agent.md` files following the <https://agent.md> specification.
 
 [![Development Status](https://github.com/ioquatix/agent-context/workflows/Test/badge.svg)](https://github.com/ioquatix/agent-context/actions?workflow=Test)
 
 ## Overview
 
-This gem allows you to install and manage context files from other gems. Gems can provide context files in a `context/` directory in their root, which can contain documentation, configuration examples, migration guides, and other contextual information.
+This gem allows you to install and manage context files from other gems. Gems can provide context files in a `context/` directory in their root, which can contain documentation, configuration examples, migration guides, and other contextual information for AI agents.
+
+When you install context from gems, they are placed in the `.context/` directory and an `agent.md` file is generated or updated to provide a comprehensive overview for AI agents.
+
+## Quick Start
+
+Add the gem to your project and install context from all available gems:
+
+```bash
+$ bundle add agent-context
+$ bake agent:context:install
+```
+
+This workflow:
+- Adds the `agent-context` gem to your project.
+- Installs context files from all gems into `.context/`.
+- Generates or updates `agent.md` with a comprehensive overview.
+- Follows the <https://agent.md> specification for agentic coding tools.
 
 ## Context
 
 This gem provides its own context files in the `context/` directory, including:
 
-- `adding-context.md` - Guide for adding context files to gems.
-- `examples.md` - Examples of context file usage.
-- `getting-started.md` - Getting started guide.
+- `usage.md` - Comprehensive guide for using and providing context files.
 
-When you install context from other gems, they will be placed in the `.context/` directory.
+
+When you install context from other gems, they will be placed in the `.context/` directory and referenced in `agent.md`.
 
 ## Usage
 
@@ -24,23 +40,37 @@ When you install context from other gems, they will be placed in the `.context/`
 
 Add the `agent-context` gem to your project:
 
-``` bash
+```bash
 $ bundle add agent-context
 ```
 
 ### Commands
 
+#### Install Context (Primary Command)
+
+Install context from all available gems and update `agent.md`:
+
+```bash
+$ bake agent:context:install
+```
+
+Install context from a specific gem:
+
+```bash
+$ bake agent:context:install --gem async
+```
+
 #### List available context
 
 List all gems that have context available:
 
-``` bash
+```bash
 $ bake agent:context:list
 ```
 
 List context files for a specific gem:
 
-``` bash
+```bash
 $ bake agent:context:list --gem async
 ```
 
@@ -48,39 +78,50 @@ $ bake agent:context:list --gem async
 
 Show the content of a specific context file:
 
-``` bash
+```bash
 $ bake agent:context:show --gem async --file thread-safety
 ```
 
-#### Install context
+## Version Control
 
-Install context from all available gems:
+Both `.context/` and `agent.md` should be committed to git:
 
-``` bash
-$ bake agent:context:install
-```
-
-Install context from a specific gem:
-
-``` bash
-$ bake agent:context:install --gem async
-```
-
-This will create a `.context/` directory in your project with the installed context files organized by gem name.
+- `agent.md` is user-facing documentation that should be versioned.
+- `.context/` files are referenced by `agent.md` and needed for AI agents to function properly.
+- This ensures AI agents in CI have access to the full context.
 
 ## Providing Context in Your Gem
 
 To provide context files in your gem, create a `context/` directory in your gem's root:
 
-    your-gem/
-    ├── context/
-    │   ├── thread-safety.md
-    │   ├── performance.md
-    │   └── migration-guide.md
-    ├── lib/
-    └── your-gem.gemspec
+```
+your-gem/
+├── context/
+│   ├── getting-started.md
+│   ├── usage.md
+│   ├── configuration.md
+│   └── index.yaml (optional)
+├── lib/
+└── your-gem.gemspec
+```
 
-Context files can be in any format, but markdown (`.md`) files are commonly used for documentation.
+### Optional: Custom Index File
+
+You can provide a custom `index.yaml` file to control ordering and metadata:
+
+```yaml
+description: "Your gem description from gemspec"
+version: "1.0.0"
+files:
+  - path: getting-started.md
+    title: "Getting Started"
+    description: "Quick start guide"
+  - path: usage.md
+    title: "Usage Guide"
+    description: "Detailed usage instructions"
+```
+
+If no `index.yaml` is provided, one will be generated automatically from your gemspec and markdown files.
 
 ## See Also
 
