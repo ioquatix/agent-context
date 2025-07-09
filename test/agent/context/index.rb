@@ -3,14 +3,17 @@
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
 
-require 'agent/context/index'
-require 'tmpdir'
-require 'fileutils'
+require "agent/context/index"
+require "tmpdir"
+require "fileutils"
 
 describe Agent::Context::Index do
-	with "empty context directory" do
+
+	
+	with "AGENT.md functionality" do
 		let(:temp_dir) { Dir.mktmpdir }
-		let(:context_path) { File.join(temp_dir, '.context') }
+		let(:context_path) { File.join(temp_dir, ".context") }
+		let(:agent_md_path) { File.join(temp_dir, "agent.md") }
 		
 		def around
 			FileUtils.mkdir_p(context_path)
@@ -19,84 +22,119 @@ describe Agent::Context::Index do
 			FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
 		end
 		
-		it "generates index with no context message" do
+		it "creates new AGENT.md when file doesn't exist" do
 			index = Agent::Context::Index.new(context_path)
-			content = index.generate
-			expect(content).to be(:include?, "# Agent Context")
+			index.update_agent_md(agent_md_path)
+			
+			expect(File.exist?(agent_md_path)).to be == true
+			content = File.read(agent_md_path)
+			expect(content).to be(:include?, "# Agent")
+			expect(content).to be(:include?, "## Context")
 			expect(content).to be(:include?, "No context files found")
 		end
-	end
-	
-	with "context files from gems" do
-		let(:temp_dir) { Dir.mktmpdir }
-		let(:context_path) { File.join(temp_dir, '.context') }
 		
-		def around
-			FileUtils.mkdir_p(context_path)
+		it "updates existing AGENT.md with context section" do
+			# Create an existing AGENT.md
+			existing_content = <<~MARKDOWN
+				# Agent
+				
+				This is an existing AGENT.md file.
+				
+				## Build & Commands
+				
+				Run `bake test` to run tests.
+			MARKDOWN
 			
+			File.write(agent_md_path, existing_content)
+			
+			index = Agent::Context::Index.new(context_path)
+			index.update_agent_md(agent_md_path)
+			
+			content = File.read(agent_md_path)
+			expect(content).to be(:include?, "# Agent")
+			expect(content).to be(:include?, "## Context")
+			expect(content).to be(:include?, "## Build & Commands")
+			expect(content).to be(:include?, "No context files found")
+		end
+		
+		it "replaces existing context section" do
+			# Create an existing AGENT.md with context section
+			existing_content = <<~MARKDOWN
+				# Agent
+				
+				## Context
+				
+				Old context content here.
+				
+				## Build & Commands
+				
+				Run `bake test` to run tests.
+			MARKDOWN
+			
+			File.write(agent_md_path, existing_content)
+			
+			index = Agent::Context::Index.new(context_path)
+			index.update_agent_md(agent_md_path)
+			
+			content = File.read(agent_md_path)
+			expect(content).to be(:include?, "# Agent")
+			expect(content).to be(:include?, "## Context")
+			expect(content).to be(:include?, "## Build & Commands")
+			expect(content).to be(:include?, "No context files found")
+			expect(content).not.to be(:include?, "Old context content here")
+		end
+		
+		it "handles AGENT.md without # Agent heading" do
+			# Create an existing file without # Agent heading
+			existing_content = <<~MARKDOWN
+				# Project Documentation
+				
+				This is a project without an Agent heading.
+				
+				## Build & Commands
+				
+				Run `bake test` to run tests.
+			MARKDOWN
+			
+			File.write(agent_md_path, existing_content)
+			
+			index = Agent::Context::Index.new(context_path)
+			index.update_agent_md(agent_md_path)
+			
+			content = File.read(agent_md_path)
+			expect(content).to be(:include?, "# Agent")
+			expect(content).to be(:include?, "## Context")
+			expect(content).to be(:include?, "# Project Documentation")
+		end
+		
+		it "generates context section with gem content" do
 			# Create a mock gem context
-			gem_dir = File.join(context_path, 'example_gem')
+			gem_dir = File.join(context_path, "example_gem")
 			FileUtils.mkdir_p(gem_dir)
 			
-			# Create a README.md file
 			readme_content = <<~MARKDOWN
 				# Example Gem
 				
 				This is an example gem that provides context for AI agents.
-				It includes various utilities and helpers.
-				
-				## Installation
-				
-				Add this to your Gemfile...
 			MARKDOWN
 			
-			File.write(File.join(gem_dir, 'README.md'), readme_content)
+			File.write(File.join(gem_dir, "README.md"), readme_content)
 			
-			# Create a usage.md file
-			usage_content = <<~MARKDOWN
-				# Usage Guide
-				
-				Here's how to use this gem effectively.
-				
-				## Basic Usage
-				
-				Start by requiring the gem...
-			MARKDOWN
-			
-			File.write(File.join(gem_dir, 'usage.md'), usage_content)
-			
-			yield
-		ensure
-			FileUtils.rm_rf(temp_dir) if Dir.exist?(temp_dir)
-		end
-		
-		it "generates index with gem context" do
 			index = Agent::Context::Index.new(context_path)
-			content = index.generate
+			index.update_agent_md(agent_md_path)
 			
-			expect(content).to be(:include?, "## Available Context Files")
+			content = File.read(agent_md_path)
+			expect(content).to be(:include?, "# Agent")
+			expect(content).to be(:include?, "## Context")
 			expect(content).to be(:include?, "### example_gem")
-			expect(content).to be(:include?, "- **[Example Gem](example_gem/README.md)**")
-			expect(content).to be(:include?, "This is an example gem that provides context")
-			expect(content).to be(:include?, "**[Usage Guide]")
-			expect(content).to be(:include?, "Here's how to use this gem effectively")
-		end
-		
-		it "writes index to file" do
-			index = Agent::Context::Index.new(context_path)
-			index.write_to_file()
-			
-			# Default path should be .context/agent.md
-			default_path = File.join(context_path, 'agent.md')
-			expect(File.exist?(default_path)).to be == true
-			content = File.read(default_path)
-			expect(content).to be(:include?, "# Agent Context")
+			expect(content).to be(:include?, "#### [Example Gem](.context/example_gem/README.md)")
+			expect(content).to be(:include?, "This is an example gem that provides context for AI agents")
 		end
 	end
 	
 	with "title and description extraction" do
 		let(:temp_dir) { Dir.mktmpdir }
-		let(:context_path) { File.join(temp_dir, '.context') }
+		let(:context_path) { File.join(temp_dir, ".context") }
 		
 		def around
 			FileUtils.mkdir_p(context_path)

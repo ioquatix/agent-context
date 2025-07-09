@@ -4,7 +4,7 @@
 # Copyright, 2025, by Shopify Inc.
 # Copyright, 2025, by Samuel Williams.
 
-require_relative "../../lib/agent/context/helper"
+require_relative "../../lib/agent/context/installer"
 require_relative "../../lib/agent/context/index"
 
 include Agent::Context
@@ -12,27 +12,27 @@ include Agent::Context
 def initialize(context)
 	super(context)
 	
-	@helper = Helper.new(root: context.root)
+	@installer = Installer.new(root: context.root)
 end
 
-attr :helper
+attr :installer
 
 # List all gems that have context available.
 # @parameter gem [String] Optional specific gem name to list context files for.
 def list(gem: nil)
 	if gem
-		files = @helper.list_context_files(gem)
+		files = @installer.list_context_files(gem)
 		if files
 			puts "Context files for gem '#{gem}':"
 			files.each do |file|
-				relative_path = Pathname.new(file).relative_path_from(Pathname.new(@helper.find_gem_with_context(gem)[:path]))
+				relative_path = Pathname.new(file).relative_path_from(Pathname.new(@installer.find_gem_with_context(gem)[:path]))
 				puts "  #{relative_path}"
 			end
 		else
 			puts "No context found for gem '#{gem}'"
 		end
 	else
-		gems = @helper.find_gems_with_context
+		gems = @installer.find_gems_with_context
 		if gems.any?
 			puts "Gems with context available:"
 			gems.each do |gem_info|
@@ -48,7 +48,7 @@ end
 # @parameter gem [String] The gem name.
 # @parameter file [String] The context file name.
 def show(gem:, file:)
-	content = @helper.show_context_file(gem, file)
+	content = @installer.show_context_file(gem, file)
 	if content
 		puts content
 	else
@@ -60,13 +60,13 @@ end
 # @parameter gem [String] Optional specific gem name to install context from.
 def install(gem: nil)
 	if gem
-		if @helper.install_gem_context(gem)
+		if @installer.install_gem_context(gem)
 			puts "Installed context from gem '#{gem}'"
 		else
 			puts "No context found for gem '#{gem}'"
 		end
 	else
-		installed = @helper.install_all_context
+		installed = @installer.install_all_context
 		if installed.any?
 			puts "Installed context from #{installed.length} gems:"
 			installed.each { |gem_name| puts "  #{gem_name}" }
@@ -74,10 +74,15 @@ def install(gem: nil)
 			puts "No gems with context found"
 		end
 	end
+	
+	# Update agent.md after installing context
+	index = Agent::Context::Index.new(@installer.context_path)
+	index.update_agent_md
 end
 
-# Generate the documentation index from installed context files.
-def index
+# Update or create AGENT.md in the project root with context section
+# This follows the AGENT.md specification for agentic coding tools
+def agent_md(path = "agent.md")
 	index = Agent::Context::Index.new(@helper.context_path)
-	index.write_to_file
+	index.update_agent_md(path)
 end
