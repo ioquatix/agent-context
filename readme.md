@@ -31,7 +31,6 @@ This gem provides its own context files in the `context/` directory, including:
 
 - `usage.md` - Comprehensive guide for using and providing context files.
 
-
 When you install context from other gems, they will be placed in the `.context/` directory and referenced in `agent.md`.
 
 ## Usage
@@ -122,6 +121,45 @@ files:
 ```
 
 If no `index.yaml` is provided, one will be generated automatically from your gemspec and markdown files.
+
+## AI Tool Integration
+
+The generated `agent.md` file can be integrated with various AI coding tools by creating symbolic links to their expected locations:
+
+### Cline
+```bash
+ln -s agent.md .clinerules
+```
+
+### Claude Code
+```bash
+ln -s agent.md CLAUDE.md
+```
+
+### Cursor
+```bash
+ln -s agent.md .cursorrules
+```
+
+### Gemini CLI, OpenAI Codex, OpenCode
+```bash
+ln -s agent.md AGENTS.md
+```
+
+### GitHub Copilot
+```bash
+ln -s ../../agent.md .github/copilot-instructions.md
+```
+
+### Replit
+```bash
+ln -s agent.md .replit.md
+```
+
+### Windsurf
+```bash
+ln -s agent.md .windsurfrules
+```
 
 ## See Also
 
