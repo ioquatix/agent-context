@@ -8,9 +8,18 @@ require "fileutils"
 require "markly"
 require "yaml"
 
+# @namespace
 module Agent
+	# @namespace
 	module Context
+		# Represents an index for managing and generating agent.md files from context files.
+		# 
+		# This class provides functionality to update or create AGENT.md files following
+		# the AGENT.md specification for agentic coding tools. It can parse existing
+		# agent.md files, update the context section, and generate new files when needed.
 		class Index
+			# Initialize a new index instance.
+			# @parameter context_path [String] The path to the context directory (default: ".context").
 			def initialize(context_path = ".context")
 				@context_path = context_path
 			end
