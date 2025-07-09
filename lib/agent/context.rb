@@ -4,7 +4,7 @@
 # Copyright, 2025, by Shopify Inc.
 
 require_relative "context/version"
-require_relative "context/helper"
+require_relative "context/installer"
 require_relative "context/index"
 
 # @namespace

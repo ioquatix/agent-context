@@ -4,12 +4,12 @@
 # Copyright, 2025, by Shopify Inc.
 # Copyright, 2025, by Samuel Williams.
 
-require "agent/context/helper"
+require "agent/context/installer"
 require "sus/fixtures/console/null_logger"
 require "tmpdir"
 require "fileutils"
 
-describe Agent::Context::Helper do
+describe Agent::Context::Installer do
 	include_context Sus::Fixtures::Console::NullLogger
 	
 	with "fake gem with context" do
