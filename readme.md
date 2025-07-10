@@ -14,22 +14,23 @@ When you install context from gems, they are placed in the `.context/` directory
 
 Add the gem to your project and install context from all available gems:
 
-```bash
+``` bash
 $ bundle add agent-context
 $ bake agent:context:install
 ```
 
 This workflow:
-- Adds the `agent-context` gem to your project.
-- Installs context files from all gems into `.context/`.
-- Generates or updates `agent.md` with a comprehensive overview.
-- Follows the <https://agent.md> specification for agentic coding tools.
+
+  - Adds the `agent-context` gem to your project.
+  - Installs context files from all gems into `.context/`.
+  - Generates or updates `agent.md` with a comprehensive overview.
+  - Follows the <https://agent.md> specification for agentic coding tools.
 
 ## Context
 
 This gem provides its own context files in the `context/` directory, including:
 
-- `usage.md` - Comprehensive guide for using and providing context files.
+  - `usage.md` - Comprehensive guide for using and providing context files.
 
 When you install context from other gems, they will be placed in the `.context/` directory and referenced in `agent.md`.
 
@@ -39,7 +40,7 @@ When you install context from other gems, they will be placed in the `.context/`
 
 Add the `agent-context` gem to your project:
 
-```bash
+``` bash
 $ bundle add agent-context
 ```
 
@@ -49,13 +50,13 @@ $ bundle add agent-context
 
 Install context from all available gems and update `agent.md`:
 
-```bash
+``` bash
 $ bake agent:context:install
 ```
 
 Install context from a specific gem:
 
-```bash
+``` bash
 $ bake agent:context:install --gem async
 ```
 
@@ -63,13 +64,13 @@ $ bake agent:context:install --gem async
 
 List all gems that have context available:
 
-```bash
+``` bash
 $ bake agent:context:list
 ```
 
 List context files for a specific gem:
 
-```bash
+``` bash
 $ bake agent:context:list --gem async
 ```
 
@@ -77,7 +78,7 @@ $ bake agent:context:list --gem async
 
 Show the content of a specific context file:
 
-```bash
+``` bash
 $ bake agent:context:show --gem async --file thread-safety
 ```
 
@@ -85,30 +86,28 @@ $ bake agent:context:show --gem async --file thread-safety
 
 Both `.context/` and `agent.md` should be committed to git:
 
-- `agent.md` is user-facing documentation that should be versioned.
-- `.context/` files are referenced by `agent.md` and needed for AI agents to function properly.
-- This ensures AI agents in CI have access to the full context.
+  - `agent.md` is user-facing documentation that should be versioned.
+  - `.context/` files are referenced by `agent.md` and needed for AI agents to function properly.
+  - This ensures AI agents in CI have access to the full context.
 
 ## Providing Context in Your Gem
 
 To provide context files in your gem, create a `context/` directory in your gem's root:
 
-```
-your-gem/
-├── context/
-│   ├── getting-started.md
-│   ├── usage.md
-│   ├── configuration.md
-│   └── index.yaml (optional)
-├── lib/
-└── your-gem.gemspec
-```
+    your-gem/
+    ├── context/
+    │   ├── getting-started.md
+    │   ├── usage.md
+    │   ├── configuration.md
+    │   └── index.yaml (optional)
+    ├── lib/
+    └── your-gem.gemspec
 
 ### Optional: Custom Index File
 
 You can provide a custom `index.yaml` file to control ordering and metadata:
 
-```yaml
+``` yaml
 description: "Your gem description from gemspec"
 version: "1.0.0"
 files:
@@ -127,37 +126,44 @@ If no `index.yaml` is provided, one will be generated automatically from your ge
 The generated `agent.md` file can be integrated with various AI coding tools by creating symbolic links to their expected locations:
 
 ### Cline
-```bash
+
+``` bash
 ln -s agent.md .clinerules
 ```
 
 ### Claude Code
-```bash
+
+``` bash
 ln -s agent.md CLAUDE.md
 ```
 
 ### Cursor
-```bash
+
+``` bash
 ln -s agent.md .cursorrules
 ```
 
 ### Gemini CLI, OpenAI Codex, OpenCode
-```bash
+
+``` bash
 ln -s agent.md AGENTS.md
 ```
 
 ### GitHub Copilot
-```bash
+
+``` bash
 ln -s ../../agent.md .github/copilot-instructions.md
 ```
 
 ### Replit
-```bash
+
+``` bash
 ln -s agent.md .replit.md
 ```
 
 ### Windsurf
-```bash
+
+``` bash
 ln -s agent.md .windsurfrules
 ```
 

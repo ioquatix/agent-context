@@ -2,6 +2,7 @@
 
 # Released under the MIT License.
 # Copyright, 2025, by Samuel Williams.
+# Copyright, 2025, by Shopify Inc.
 
 require "agent/context/index"
 require "tmpdir"
