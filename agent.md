@@ -2,7 +2,7 @@
 
 ## Context
 
-Context files from installed gems providing documentation and guidance for AI agents.
+This section provides links to documentation from installed packages. It is automatically generated and may be updated by running `bake agent:context:install`.
 
 ### decode
 

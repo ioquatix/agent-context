@@ -44,7 +44,7 @@ module Agent
 			def generate_context_section
 				sections = []
 				
-				sections << "Context files from installed gems providing documentation and guidance for AI agents."
+				sections << "This section provides links to documentation from installed packages. It is automatically generated and may be updated by running `bake agent:context:install`."
 				sections << ""
 				
 				gem_contexts = collect_gem_contexts
