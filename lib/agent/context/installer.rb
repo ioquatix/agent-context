@@ -257,14 +257,6 @@ module Agent
 				
 				description
 			end
-			
-			def extract_gem_description(gem_name)
-				# Find the gem specification using Ruby's Gem API
-				spec = Gem::Specification.find_by_name(gem_name)
-				spec&.summary
-			rescue Gem::MissingSpecError
-				nil
-			end
 		end
 	end
 end
