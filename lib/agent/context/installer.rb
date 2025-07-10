@@ -63,7 +63,7 @@ module Agent
 				
 			# Find a specific gem with context.
 			def find_gem_with_context(gem_name)
-				spec = @specifications.find { |s| s.name == gem_name }
+				spec = @specifications.find {|spec| spec.name == gem_name}
 				return nil unless spec
 					
 				context_path = File.join(spec.full_gem_path, "context")
@@ -86,7 +86,7 @@ module Agent
 				gem = find_gem_with_context(gem_name)
 				return nil unless gem
 					
-				Dir.glob(File.join(gem[:path], "**/*")).select { |f| File.file?(f) }
+				Dir.glob(File.join(gem[:path], "**/*")).select {|f| File.file?(f)}
 			end
 				
 			# Show content of a specific context file.
@@ -101,7 +101,7 @@ module Agent
 						File.join(gem[:path], "#{file_name}.md")
 					]
 					
-				file_path = possible_paths.find { |path| File.exist?(path) }
+				file_path = possible_paths.find {|path| File.exist?(path)}
 				return nil unless file_path
 					
 				File.read(file_path)
@@ -214,7 +214,7 @@ module Agent
 			
 			def extract_title(lines)
 				# Look for the first markdown header
-				header_line = lines.find { |line| line.start_with?("#") }
+				header_line = lines.find {|line| line.start_with?("#")}
 				if header_line
 					# Remove markdown header syntax and clean up
 					header_line.sub(/^#+\s*/, "").strip

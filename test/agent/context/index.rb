@@ -12,9 +12,9 @@ describe Agent::Context::Index do
 
 	
 	with "AGENT.md functionality" do
-		let(:temporary_directory) { Dir.mktmpdir }
-		let(:context_path) { File.join(temporary_directory, ".context") }
-		let(:agent_md_path) { File.join(temporary_directory, "agent.md") }
+		let(:temporary_directory) {Dir.mktmpdir}
+		let(:context_path) {File.join(temporary_directory, ".context")}
+		let(:agent_md_path) {File.join(temporary_directory, "agent.md")}
 		
 		def around
 			FileUtils.mkdir_p(context_path)
@@ -197,8 +197,8 @@ describe Agent::Context::Index do
 	end
 	
 	with "title and description extraction" do
-		let(:temporary_directory) { Dir.mktmpdir }
-		let(:context_path) { File.join(temporary_directory, ".context") }
+		let(:temporary_directory) {Dir.mktmpdir}
+		let(:context_path) {File.join(temporary_directory, ".context")}
 		
 		def around
 			FileUtils.mkdir_p(context_path)
@@ -289,8 +289,8 @@ describe Agent::Context::Index do
 	end
 	
 	with "index.yaml handling" do
-		let(:temporary_directory) { Dir.mktmpdir }
-		let(:context_path) { File.join(temporary_directory, ".context") }
+		let(:temporary_directory) {Dir.mktmpdir}
+		let(:context_path) {File.join(temporary_directory, ".context")}
 		
 		def around
 			FileUtils.mkdir_p(context_path)
