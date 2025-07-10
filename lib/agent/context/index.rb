@@ -129,7 +129,6 @@ module Agent
 					"## Context",
 					"",
 					context_content,
-					""
 				].join("\n")
 				File.write(agent_md_path, content)
 			end
