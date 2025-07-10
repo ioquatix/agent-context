@@ -139,9 +139,22 @@ ln -s agent.md CLAUDE.md
 
 ### Cursor
 
+First, create the `.cursor/rules` directory:
+
 ``` bash
-ln -s agent.md .cursorrules
+mkdir -p .cursor/rules
 ```
+
+Then create `.cursor/rules/agent.mdc` with:
+
+``` markdown
+---
+alwaysApply: true
+---
+Consult the `agent.md` file in the root directory.
+```
+
+This approach uses Cursor's proper front-matter format and directs the AI to consult the main `agent.md` file.
 
 ### Gemini CLI, OpenAI Codex, OpenCode
 
