@@ -5,7 +5,6 @@
 
 require_relative "version"
 require "fileutils"
-require "markly"
 require "yaml"
 
 # @namespace
