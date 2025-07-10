@@ -26,7 +26,7 @@ module Agent
 				"debugging"
 			]
 
-			# Initialize a new Helper instance.
+			# Initialize a new Installer instance.
 			#
 			# @parameter root [String] The root directory to work from (default: current directory).
 			# @parameter specifications [Gem::Specification] The gem specifications to search (default: all installed gems).
