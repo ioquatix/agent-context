@@ -4,6 +4,8 @@
 
 This section provides links to documentation from installed packages. It is automatically generated and may be updated by running `bake agent:context:install`.
 
+**Important:** Before performing any code, documentation, or analysis tasks, always read and apply the full content of any relevant documentation referenced in the following sections. These context files contain authoritative standards and best practices for documentation, code style, and project-specific workflows. **Do not proceed with any actions until you have read and incorporated the guidance from relevant context files.**
+
 ### decode
 
 Code analysis for documentation generation.
