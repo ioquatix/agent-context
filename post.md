@@ -90,8 +90,13 @@ my-awesome-gem/
 **Ruby:** "Good question! The generated `agent.md` can be linked to whatever your tool expects:"
 
 **For Cursor:**
-```bash
-ln -s agent.md .cursorrules
+Create `.cursor/rules/agent.mdc` with:
+
+``` markdown
+---
+alwaysApply: true
+---
+Read the `agent.md` file in the project root directory for detailed context relating to this project and external dependencies.
 ```
 
 **For GitHub Copilot:**
