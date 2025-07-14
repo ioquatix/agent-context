@@ -151,7 +151,7 @@ Then create `.cursor/rules/agent.mdc` with:
 ---
 alwaysApply: true
 ---
-Consult the `agent.md` file in the root directory.
+Read the `agent.md` file in the project root directory for detailed context relating to this project and external dependencies.
 ```
 
 This approach uses Cursor's proper front-matter format and directs the AI to consult the main `agent.md` file.
