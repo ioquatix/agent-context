@@ -184,6 +184,13 @@ ln -s agent.md .windsurfrules
 
   - [Bake](https://github.com/ioquatix/bake) — The bake task execution tool.
 
+### Gems With Context Files
+
+  - [Async](https://github.com/socketry/async)
+  - [Decode](https://github.com/ioquatix/decode)
+  - [Falcon](https:///github.com/socketry/falcon)
+  - [Sus](https://github.com/socketry/sus)
+
 ## Contributing
 
 We welcome contributions to this project.
