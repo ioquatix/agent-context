@@ -6,6 +6,8 @@ This section provides links to documentation from installed packages. It is auto
 
 **Important:** Before performing any code, documentation, or analysis tasks, always read and apply the full content of any relevant documentation referenced in the following sections. These context files contain authoritative standards and best practices for documentation, code style, and project-specific workflows. **Do not proceed with any actions until you have read and incorporated the guidance from relevant context files.**
 
+**Setup Instructions:** If the referenced files are not present or if dependencies have been updated, run `bake agent:context:install` to install the latest context files.
+
 ### decode
 
 Code analysis for documentation generation.
