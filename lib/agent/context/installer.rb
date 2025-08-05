@@ -170,7 +170,6 @@ module Agent
 				
 				{
 					"description" => gem[:summary] || "Context files for #{gem[:name]}",
-					"version" => gem[:version],
 					"metadata" => gem[:metadata],
 					"files" => files
 				}
@@ -196,7 +195,6 @@ module Agent
 				# Return a fallback index
 				{
 					"description" => gem[:summary] || "Context files for #{gem[:name]}",
-					"version" => gem[:version],
 					"metadata" => gem[:metadata],
 					"files" => []
 				}

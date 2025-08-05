@@ -38,6 +38,8 @@ When you install context from other gems, they will be placed in the `.context/`
 
 Please see the [project documentation](https://ioquatix.github.io/agent-context/) for more details.
 
+  - [Getting Started](https://ioquatix.github.io/agent-context/guides/getting-started/index) - This guide explains how to use `agent-context`, a tool for discovering and installing contextual information from Ruby gems to help AI agents.
+
 ### Installation
 
 Add the `agent-context` gem to your project:

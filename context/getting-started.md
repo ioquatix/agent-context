@@ -1,10 +1,26 @@
-# Usage Guide
+# Getting Started
 
-## What is agent-context?
+This guide explains how to use `agent-context`, a tool for discovering and installing contextual information from Ruby gems to help AI agents.
+
+## Overview
 
 `agent-context` is a tool that helps you discover and install contextual information from Ruby gems for AI agents. Gems can provide additional documentation, examples, and guidance in a `context/` directory.
 
-## Quick Commands
+## Installation
+
+Add the gem to your project:
+
+```bash
+$ bundle add agent-context
+```
+
+Then install agent context files:
+
+```bash
+$ bundle exec bake agent:context:install
+```
+
+## Commands
 
 ```bash
 # See what context is available
