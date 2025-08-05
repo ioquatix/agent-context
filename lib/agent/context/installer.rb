@@ -251,9 +251,6 @@ module Agent
 				
 				# Join the lines and truncate if too long
 				description = description_lines.join(" ").strip
-				if description.length > 197
-					description = description[0..196] + "..."
-				end
 				
 				description
 			end
