@@ -180,6 +180,10 @@ ln -s agent.md .replit.md
 ln -s agent.md .windsurfrules
 ```
 
+## Releases
+
+There are no documented releases.
+
 ## See Also
 
   - [Bake](https://github.com/ioquatix/bake) — The bake task execution tool.

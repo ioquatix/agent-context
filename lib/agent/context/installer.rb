@@ -25,7 +25,7 @@ module Agent
 				"troubleshooting",
 				"debugging"
 			]
-
+			
 			# Initialize a new Installer instance.
 			#
 			# @parameter root [String] The root directory to work from (default: current directory).
@@ -37,11 +37,11 @@ module Agent
 			end
 			
 			attr_reader :context_path
-				
+			
 			# Find all gems that have a context directory
 			def find_gems_with_context(skip_local: true)
 				gems_with_context = []
-					
+				
 				@specifications.each do |spec|
 					# Skip gems loaded from current working directory if requested:
 					next if skip_local && spec.full_gem_path == @root
@@ -57,17 +57,17 @@ module Agent
 						}
 					end
 				end
-					
+				
 				gems_with_context
 			end
-				
+			
 			# Find a specific gem with context.
 			def find_gem_with_context(gem_name)
 				spec = @specifications.find {|spec| spec.name == gem_name}
 				return nil unless spec
-					
+				
 				context_path = File.join(spec.full_gem_path, "context")
-					
+				
 				if Dir.exist?(context_path)
 					{
 							name: spec.name,
@@ -80,33 +80,33 @@ module Agent
 					nil
 				end
 			end
-				
+			
 			# List context files for a gem.
 			def list_context_files(gem_name)
 				gem = find_gem_with_context(gem_name)
 				return nil unless gem
-					
+				
 				Dir.glob(File.join(gem[:path], "**/*")).select {|f| File.file?(f)}
 			end
-				
+			
 			# Show content of a specific context file.
 			def show_context_file(gem_name, file_name)
 				gem = find_gem_with_context(gem_name)
 				return nil unless gem
-					
+				
 				# Try to find the file with or without extension:
 				possible_paths = [
 						File.join(gem[:path], file_name),
 						File.join(gem[:path], "#{file_name}.md"),
 						File.join(gem[:path], "#{file_name}.md")
 					]
-					
+				
 				file_path = possible_paths.find {|path| File.exist?(path)}
 				return nil unless file_path
-					
+				
 				File.read(file_path)
 			end
-				
+			
 			# Install context from a specific gem.
 			def install_gem_context(gem_name)
 				gem = find_gem_with_context(gem_name)
@@ -127,18 +127,18 @@ module Agent
 				
 				true
 			end
-				
+			
 			# Install context from all gems.
 			def install_all_context(skip_local: true)
 				gems = find_gems_with_context(skip_local: skip_local)
 				installed = []
-					
+				
 				gems.each do |gem|
 					if install_gem_context(gem[:name])
 						installed << gem[:name]
 					end
 				end
-					
+				
 				installed
 			end
 			
@@ -183,7 +183,7 @@ module Agent
 				unless File.exist?(index_path)
 					# Generate dynamic index from gemspec
 					index = generate_dynamic_index(gem, gem_directory)
-					
+				
 					# Write the generated index
 					File.write(index_path, index.to_yaml)
 					Console.debug("Generated dynamic index for #{gem[:name]}: #{index_path}")

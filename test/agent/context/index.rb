@@ -9,7 +9,7 @@ require "tmpdir"
 require "fileutils"
 
 describe Agent::Context::Index do
-
+	
 	
 	with "AGENT.md functionality" do
 		let(:temporary_directory) {Dir.mktmpdir}
