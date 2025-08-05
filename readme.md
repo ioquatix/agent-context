@@ -36,6 +36,8 @@ When you install context from other gems, they will be placed in the `.context/`
 
 ## Usage
 
+Please see the [project documentation](https://ioquatix.github.io/agent-context/) for more details.
+
 ### Installation
 
 Add the `agent-context` gem to your project:
@@ -182,7 +184,11 @@ ln -s agent.md .windsurfrules
 
 ## Releases
 
-There are no documented releases.
+Please see the [project releases](https://ioquatix.github.io/agent-context/releases/index) for all releases.
+
+### v0.2.0
+
+  - Don't limit description length.
 
 ## See Also
 
