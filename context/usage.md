@@ -9,9 +9,9 @@ Use `agent-context` to find practical guidance shipped by Ruby gem dependencies 
 
 ## Use Dependency Guidance
 
-Follow the repository's agent instructions and read `.agents/context/index.md` to find installed dependency guidance. Use its package descriptions, document titles, and summaries to select the guides relevant to the task, then read those guides before changing code that uses the package.
+Follow the repository's agent instructions and discover installed dependency guidance by listing Markdown files under `.agents/context/GEM/`. Use descriptive filenames to select relevant guides, then read them before changing code that uses the package. For example, `rg --files --hidden --no-ignore .agents/context -g "*.md"` lists the installed Markdown files.
 
-If the index or relevant installed files are missing, run `bundle exec bake agent:context:install` from the consuming project. Run it again after changing dependencies. It installs ordinary context and skills from resolved dependency gems and refreshes `.agents/context/index.md`.
+If relevant installed files are missing, run `bundle exec bake agent:context:install` from the consuming project. Run it again after changing dependencies. It installs ordinary context and skills from resolved dependency gems.
 
 To inspect or install guidance from a specific provider:
 
@@ -22,9 +22,9 @@ bundle exec bake agent:context:show --gem async --file thread-safety
 bundle exec bake agent:context:install --gem async
 ```
 
-`show` reads the provider's source file; the `.md` extension is optional. `install --gem NAME` installs both ordinary context and skills from that provider. Use `bundle exec bake agent:context:index` to regenerate the index from already installed context.
+`show` reads the provider's source file; the `.md` extension is optional. `install --gem NAME` installs both ordinary context and skills from that provider.
 
-Ordinary context is copied to `.agents/context/GEM/`. The index links to Markdown guides using their headings and prose summaries. Add a stable link to `.agents/context/index.md` in the repository's `agents.md` when configuring repository instructions.
+Ordinary context is copied to `.agents/context/GEM/`. Repository instructions can direct agents to discover and read relevant guides there.
 
 ## Use Dependency Skills
 
@@ -49,7 +49,7 @@ Each installed skill directory contains `skill.json` recording its provider ecos
 
 ## Publish Context and Skills
 
-Put focused Markdown guides directly in the gem's `context/` directory, using descriptive lowercase filenames. Give each guide a clear heading and first prose sentence. YAML front matter can override its summary with `description`. Installation generates the Markdown index directly from these documents and uses provider-authored `index.yaml` to customize ordering, titles, and descriptions.
+Put focused Markdown guides in the gem's `context/` directory, using descriptive lowercase filenames. Give each guide a clear heading and introduction, and link related guides together.
 
 To publish a skill, add `context/workflow.md` with metadata describing when to use it:
 

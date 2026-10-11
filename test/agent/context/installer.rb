@@ -148,36 +148,6 @@ describe Agent::Context::Installer do
 				expect(File).to be(:exist?, File.join(target_context_path, "getting-started.md"))
 				expect(File).to be(:exist?, File.join(target_context_path, "configuration.md"))
 			end
-			
-			it "generates the Markdown index directly without per-provider YAML" do
-				File.write(File.join(context_path, "notes.md"), "First paragraph.\n\nSecond paragraph.")
-				helper = subject.new(root: @target_path, specifications: @specifications)
-				target_context_path = File.join(helper.context_path, "fake-gem")
-				FileUtils.mkdir_p(target_context_path)
-				File.write(File.join(target_context_path, "index.yaml"), "description: Old generated metadata.\n")
-				
-				expect(helper.install[:context]).to be == ["fake-gem"]
-				expect(File).not.to be(:exist?, File.join(target_context_path, "index.yaml"))
-				expect(File).not.to be(:exist?, File.join(context_path, "index.yaml"))
-				
-				index = File.read(File.join(helper.context_path, "index.md"))
-				expect(index).to be(:include?, "A fake gem for testing")
-				expect(index).to be(:include?, "### [notes](fake-gem/notes.md)")
-				expect(index).to be(:include?, "First paragraph.")
-				expect(index.index("Getting Started")).to be < index.index("Configuration")
-			end
-			
-			it "copies provider-authored YAML unchanged and honors its overrides" do
-				authored = "# Provider-owned metadata\ndescription: Custom provider description.\nfiles:\n- path: configuration.md\n  title: Custom Configuration\n"
-				File.write(File.join(context_path, "index.yaml"), authored)
-				helper = subject.new(root: @target_path, specifications: @specifications)
-				helper.install
-				expect(File.read(File.join(helper.context_path, "fake-gem", "index.yaml"))).to be == authored
-				expect(File.read(File.join(context_path, "index.yaml"))).to be == authored
-				index = File.read(File.join(helper.context_path, "index.md"))
-				expect(index).to be(:include?, "Custom provider description.")
-				expect(index.index("Custom Configuration")).to be < index.index("Getting Started")
-			end
 		end
 	end
 	

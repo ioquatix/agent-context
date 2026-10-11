@@ -20,10 +20,9 @@ describe Agent::Context::Document do
 	
 	it "reads native front matter with a YAML format hint and standard dates" do
 		File.write(path, "--- yaml\ntitle: Metadata title\ndate: 2026-10-09\nupdated: 2026-10-09T12:30:00Z\n---\n\n# Actual Title\n\nFirst sentence. Second sentence.\n")
+		expect(document.metadata["title"]).to be == "Metadata title"
 		expect(document.metadata["date"]).to be == Date.new(2026, 10, 9)
 		expect(document.metadata["updated"]).to be == Time.utc(2026, 10, 9, 12, 30)
-		expect(document.title).to be == "Actual Title"
-		expect(document.description).to be == "First sentence."
 	end
 	
 	it "preserves the body bytes and source file when front matter uses CRLF" do
@@ -31,7 +30,6 @@ describe Agent::Context::Document do
 		content = "---\ndescription: Explicit summary.\n---\n".gsub("\n", "\r\n") + body
 		File.binwrite(path, content)
 		expect(document.body).to be == body
-		expect(document.description).to be == "Explicit summary."
 		expect(File.binread(path)).to be == content
 	end
 	
@@ -40,13 +38,11 @@ describe Agent::Context::Document do
 		parsed = subject.parse(content, path: path)
 		expect(parsed.metadata).to be == {}
 		expect(parsed.body).to be == content
-		expect(parsed).not.to be(:skill?)
 	end
 	
 	it "accepts empty front matter" do
 		File.write(path, "---\n---\n# Guide\n")
 		expect(document.metadata).to be == {}
-		expect(document.title).to be == "Guide"
 		expect(document.body).to be == "# Guide\n"
 	end
 	

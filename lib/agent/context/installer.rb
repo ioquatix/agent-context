@@ -10,8 +10,6 @@ require "pathname"
 require "tmpdir"
 
 require_relative "paths"
-require_relative "document"
-require_relative "index"
 require "agent/context/skills/installer"
 
 module Agent
@@ -162,27 +160,16 @@ module Agent
 				installed
 			end
 			
-			# Install context and skills and refresh the generated index.
+			# Install context and skills.
 			# @parameter gem [String | Nil] An optional provider gem.
 			# @returns [Hash(Symbol, Array(String))] The installed provider and skill names.
 			def install(gem: nil)
-				providers = gem ? [find_gem_with_context(gem)].compact : find_gems_with_context
-				
-				# Read ordinary document metadata before modifying installed skills:
-				providers.each do |provider|
-					list_context_files(provider[:name]).each do |path|
-						Document.load(path).description if File.extname(path).downcase == ".md"
-					end
-				end
-				
 				installed_skills = @skills.install(gem: gem)
 				installed_context = if gem
 					install_gem_context(gem) ? [gem] : []
 				else
 					install_all_context
 				end
-				
-				Index.new(@context_path, specifications: @specifications).update_index
 				
 				{context: installed_context, skills: installed_skills}
 			end

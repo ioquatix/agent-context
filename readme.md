@@ -1,6 +1,6 @@
 # Agent::Context
 
-Provides tools for installing and managing context files and skills from Ruby gems for AI agents, and generating `.agents/context/index.md`.
+Provides tools for installing and managing context files and skills from Ruby gems for AI agents.
 
 [![Development Status](https://github.com/socketry/agent-context/workflows/Test/badge.svg)](https://github.com/socketry/agent-context/actions?workflow=Test)
 
@@ -8,7 +8,7 @@ Provides tools for installing and managing context files and skills from Ruby ge
 
 This gem allows you to install and manage context files from other gems. Gems can provide context files in a `context/` directory in their root, which can contain documentation, configuration examples, migration guides, and other contextual information for AI agents.
 
-When you install context from gems, ordinary guides are placed in `.agents/context/` and dependency skills in `.agents/skills/`. The generated `.agents/context/index.md` links to the guides.
+When you install context from gems, ordinary guides are placed in `.agents/context/` and dependency skills in `.agents/skills/`. Browse `.agents/context/GEM/` or use the list/show commands to find relevant guides.
 
 ## Quick Start
 
@@ -24,8 +24,6 @@ This workflow:
   - Adds the `agent-context` gem to your project.
   - Installs context files from all gems into `.agents/context/`.
   - Installs metadata-declared skills into `.agents/skills/`.
-  - Generates `.agents/context/index.md` with a comprehensive overview.
-  - Follows the <https://agents.md> specification for agentic coding tools.
 
 ## Context
 
@@ -34,7 +32,7 @@ This gem provides its own context files in the `context/` directory, including:
   - `getting-started.md` - Comprehensive guide for using and providing context files and skills.
   - [`usage.md`](context/usage.md) - Agent instructions for finding dependency guidance and managing context and skills, installed as the `agent-context-usage` skill.
 
-When you install context from other gems, they will be placed in `.agents/context/` and referenced in `.agents/context/index.md`.
+When you install context from other gems, they will be placed in `.agents/context/`.
 
 ## Usage
 
@@ -54,7 +52,7 @@ $ bundle add agent-context
 
 #### Install Context (Primary Command)
 
-Install ordinary context and skills from all available gems and update `.agents/context/index.md`:
+Install ordinary context and skills from all available gems:
 
 ``` bash
 $ bake agent:context:install
@@ -88,14 +86,6 @@ Show the content of a specific context file:
 $ bake agent:context:show --gem async --file thread-safety
 ```
 
-#### Refresh the Context Index
-
-Refresh the index from installed context:
-
-``` bash
-$ bake agent:context:index
-```
-
 #### Skills
 
 List, show, or install metadata-declared dependency skills:
@@ -111,7 +101,7 @@ $ bake agent:context:skill:install --gem provider --skill provider-workflow
 
 ## Version Control
 
-Add a stable link to `.agents/context/index.md` in your repository-owned `agents.md`, together with instructions to read relevant installed guides. Run installation after changing dependencies. When migrating from an older generated `agents.md`, replace its generated dependency listing with this link while retaining project instructions.
+In your repository instructions, direct agents to read relevant Markdown guides under `.agents/context/GEM/` and apply matching skills from `.agents/skills/`. Run installation after changing dependencies.
 
 Installation maintains a marked block in the local Git exclude file, discovered through `git rev-parse --git-path info/exclude`. It excludes generated context, ownership files, and exact dependency-installed skill directories. Track project-owned instructions and skills under `.agents/`. Remove any blanket `/.agents/` rule from your project's `.gitignore` when adopting this layout. Re-run installation in each checkout.
 
@@ -123,28 +113,11 @@ To provide context files in your gem, create a `context/` directory in your gem'
     ├── context/
     │   ├── getting-started.md
     │   ├── usage.md
-    │   ├── configuration.md
-    │   └── index.yaml (optional)
+    │   └── configuration.md
     ├── lib/
     └── your-gem.gemspec
 
-### Optional: Custom Index File
-
-You can provide a custom `index.yaml` file to control ordering and metadata:
-
-``` yaml
-description: "Your gem description from gemspec"
-version: "1.0.0"
-files:
-  - path: getting-started.md
-    title: "Getting Started"
-    description: "Quick start guide"
-  - path: usage.md
-    title: "Usage Guide"
-    description: "Detailed usage instructions"
-```
-
-Installation generates `.agents/context/index.md` directly from Markdown headings, prose summaries, and document ordering, with the gem summary supplying the package description. A provider-authored `index.yaml` customizes these values.
+Use descriptive filenames and focused Markdown guides. Agents find the installed files through directory listing and the list/show commands.
 
 ### Providing Skills
 

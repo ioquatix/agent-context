@@ -10,14 +10,12 @@ describe "Agent Context tasks" do
 	it "exposes context and skill tasks without the old command namespace" do
 		Dir.mktmpdir do |root|
 			context = Bake::Context.load(root)
-			%w[agent:context:list agent:context:show agent:context:install agent:context:index agent:context:skill:list agent:context:skill:show agent:context:skill:install].each do |name|
+			%w[agent:context:list agent:context:show agent:context:install agent:context:skill:list agent:context:skill:show agent:context:skill:install].each do |name|
 				expect(context.lookup(name)).to be_truthy
 			end
+			expect(context.lookup("agent:context:index")).to be_nil
 			expect(context.lookup("agent:context:agents_md")).to be_nil
 			expect(context.lookup("agent:skills:install")).to be_nil
-			context.call("agent:context:index")
-			expect(File).to be(:exist?, File.join(root, ".agents/context/index.md"))
-			expect(File).not.to be(:exist?, File.join(root, "agents.md"))
 		end
 	end
 	
@@ -50,11 +48,12 @@ describe "Agent Context tasks" do
 			end.to raise_exception(ArgumentError)
 			context.call("agent:context:skill:install", "--gem", "provider", "--skill", "provider-workflow")
 			context.call("agent:context:install", "--gem", "provider")
-			context.call("agent:context:index")
 			expect(output.join("\n")).to be(:include?, "Provider Guide")
 			expect(output.join("\n")).to be(:include?, "provider-workflow (provider@1.0.0)")
 			expect(output.join("\n")).to be(:include?, "Installed skills: provider-workflow")
-			expect(File).to be(:exist?, File.join(root, ".agents/context/index.md"))
+			expect(File).not.to be(:exist?, File.join(root, ".agents/context/index.md"))
+			expect(File).to be(:exist?, File.join(root, ".agents/context/provider/guide.md"))
+			expect(File).not.to be(:exist?, File.join(root, "agents.md"))
 			expect(File).to be(:exist?, File.join(root, ".agents/skills/provider-workflow/SKILL.md"))
 			FileUtils.rm_rf(File.join(provider, "context"))
 			context.call("agent:context:list")

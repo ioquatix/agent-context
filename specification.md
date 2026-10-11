@@ -150,7 +150,7 @@ Common file names:
 
 A context provider may distribute an Agent Skill as a Markdown document directly inside `context/`. The document MUST use YAML front matter with `type: skill` and a non-empty `description`. Its filename, without the `.md` extension, is the local skill name. A directory with the same name MAY contain skill resources. Consumers MUST prefix the local name with the lowercase provider package name (with underscores normalized to hyphens) and a hyphen to produce the installed skill name. Installed names MUST use lowercase ASCII letters, digits, and single hyphens, contain 1–64 characters, and begin and end with a letter or digit. Descriptions MUST contain 1–1,024 characters after trimming whitespace. Consumers MUST validate these fields and preserve additional skill metadata; generated installed names take precedence over a source `name` field.
 
-Consumers that support skills MUST install the document as `.agents/skills/<package-name>-<local-name>/SKILL.md`, with the installed name and `description` in its front matter. Files in the matching resource directory MUST be copied into that skill directory. Skill documents and their resources MUST NOT also be copied into `.agents/context/` or included in the generated context index.
+Consumers that support skills MUST install the document as `.agents/skills/<package-name>-<local-name>/SKILL.md`, with the installed name and `description` in its front matter. Files in the matching resource directory MUST be copied into that skill directory. Skill documents and their resources MUST NOT also be copied into `.agents/context/`.
 
 Dependency-installed skill directories SHOULD be excluded from version control, while project-owned skills in `.agents/skills/` SHOULD remain trackable. Git integrations SHOULD add exact dependency-installed skill paths to `.git/info/exclude` rather than ignore the entire `.agents/skills/` directory. They SHOULD mark generated entries with comments and preserve user-authored rules outside that marked section.
 
@@ -197,13 +197,15 @@ FOR each package with context:
 END
 ```
 
-## 6. Generated Index and Repository Ownership
+## 6. Discovering Installed Context
 
-Consumers SHOULD generate `.agents/context/index.md` with links relative to that file. Context installation MUST NOT create or modify the repository owner's `agents.md`. Owners can link to the generated index and instruct agents to read relevant installed guidance.
+Consumers SHOULD provide commands to list providers, list their context files, and show a selected file. Agents discover installed guidance by enumerating Markdown files under `.agents/context/<package-name>/` and reading the files relevant to their task. A packaged usage skill SHOULD explain this workflow and how to install missing guidance.
 
-Ordinary documents need no front matter. Consumers SHOULD use a document's first heading as its title (falling back to the filename) and its first prose sentence as its description. A non-empty YAML `description` takes precedence over prose. Unrelated ordinary-document metadata MUST be tolerated. Skill resource files are opaque assets and MUST NOT be parsed as context documents.
+Providers SHOULD use descriptive filenames, keep guides focused on one topic, and link related documents. Ordinary documents need no front matter. Unrelated ordinary-document metadata MUST be tolerated. Skill resource files are opaque assets and MUST NOT be parsed as context documents.
 
-A provider MAY supply `context/index.yaml` with `description` and a `files` sequence containing `path`, `title`, and `description`. Supporting consumers SHOULD preserve explicit ordering and overrides, omit missing or skill-only paths, and append unlisted ordinary documents. Fallback ordering is getting-started, overview, usage, configuration, migration, troubleshooting, debugging, then alphabetical order.
+The installed directory layout is the discovery interface. Consumers MUST NOT generate a context index or interpret `context/index.yaml` as indexing metadata. Provider-authored files are copied as ordinary resources according to section 5.
+
+Context installation MUST NOT create or modify the repository owner's `agents.md`. Repository owners can instruct agents to read relevant installed guidance under `.agents/context/`.
 
 ## 7. Skill Installation Ownership
 

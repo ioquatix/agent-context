@@ -38,9 +38,6 @@ bake agent:context:list --gem async
 # View a specific context file
 bake agent:context:show --gem async --file thread-safety
 
-# Refresh the generated index
-bake agent:context:index
-
 # List, show, or install dependency skills
 bake agent:context:skill:list
 bake agent:context:skill:show --gem provider --skill provider-workflow
@@ -61,7 +58,9 @@ When you run `bake agent:context:install`, the tool:
 2. Creates a `.agents/context/` directory in your current project.
 3. Copies ordinary context files organized by gem name.
 4. Installs metadata-declared skills and their resources into `.agents/skills/`.
-5. Generates `.agents/context/index.md`. Add a stable link to the generated index in your repository instructions.
+5. Updates local Git exclusions for installed context and dependency skills.
+
+Discover installed Markdown guides by listing files under `.agents/context/GEM/`. Repository instructions can direct agents to read the guides relevant to their task.
 
 For example:
 ```
@@ -152,7 +151,7 @@ Available context files:
 
 #### 4. File format and content guidelines
 
-Use a clear heading and first prose sentence for each Markdown guide. Optional YAML `description` overrides the prose summary. Installation generates the Markdown index directly from these documents and uses provider-authored `index.yaml` to customize ordering, titles, and descriptions.
+Use descriptive filenames, a clear heading, and an introduction for each Markdown guide. Link related guides so agents can follow them when they need more detail.
 
 Context files can be in any format, but `.md` is commonly used for documentation. The content should be:
 

@@ -31,7 +31,7 @@ describe Agent::Context::Installer do
 		FileUtils.rm_rf(directory)
 	end
 	
-	it "enumerates gem specifications during discovery and index generation" do
+	it "enumerates gem specifications during discovery" do
 		enumerations = 0
 		specifications = Enumerator.new do |yielder|
 			enumerations += 1
@@ -39,12 +39,11 @@ describe Agent::Context::Installer do
 		end
 		installer = subject.new(root: consumer, specifications: specifications)
 		skills = Agent::Context::Skills::Installer.new(root: consumer, specifications: specifications)
-		index = Agent::Context::Index.new(installer.context_path, specifications: specifications)
 		expect(enumerations).to be == 0
 		expect(installer.find_gems_with_context.map{|gem| gem[:name]}).to be == ["provider"]
 		expect(skills.find_gems_with_skills.map{|gem| gem[:name]}).to be == ["provider"]
 		installer.install
-		expect(index.generate_index).to be(:include?, "Provider guidance.")
+		expect(File.read(File.join(consumer, ".agents/context/provider/guide.md"))).to be == File.read(File.join(provider, "context/guide.md"))
 	end
 	
 	it "installs context and skills without duplicating skill documents or assets" do
@@ -58,7 +57,20 @@ describe Agent::Context::Installer do
 		skill_root = File.join(consumer, ".agents/skills/provider-workflow")
 		expect(File.read(File.join(skill_root, "SKILL.md"))).to be(:include?, "license: MIT")
 		expect(File).to be(:exist?, File.join(skill_root, "references/checklist.md"))
-		expect(File.read(File.join(consumer, ".agents/context/index.md"))).not.to be(:include?, "Workflow")
+		expect(File).not.to be(:exist?, File.join(consumer, ".agents/context/index.md"))
+	end
+	
+	it "updates Git exclusions when a provider only has ordinary context" do
+		system("git", "init", "--quiet", consumer, exception: true)
+		File.delete(File.join(provider, "context/workflow.md"))
+		FileUtils.rm_rf(File.join(provider, "context/workflow"))
+		
+		expect(installer.install(gem: "provider")).to be == {context: ["provider"], skills: []}
+		path = ".agents/context/provider/guide.md"
+		expect(File.read(File.join(consumer, path))).to be == File.read(File.join(provider, "context/guide.md"))
+		_, status = Open3.capture2e("git", "check-ignore", "--quiet", path, chdir: consumer)
+		expect(status.success?).to be == true
+		expect(File).not.to be(:exist?, File.join(consumer, ".agents/context/index.md"))
 	end
 	
 	it "excludes skill instructions and resources from listing and showing context" do
@@ -70,7 +82,7 @@ describe Agent::Context::Installer do
 		end.to raise_exception(ArgumentError)
 	end
 	
-	it "validates ordinary metadata before modifying installed skills" do
+	it "validates front matter when classifying context documents" do
 		File.write(File.join(provider, "context/guide.md"), "---\ndescription: [broken\n---\n\n# Guide")
 		expect do
 			installer.install
@@ -92,13 +104,12 @@ describe Agent::Context::Installer do
 		expect(metadata).not.to be(:key?, "type")
 		expect(metadata["date"]).to be == Date.new(2026, 10, 9)
 		expect(metadata["updated"]).to be == Time.utc(2026, 10, 9, 12, 30)
-		expect(File.read(File.join(consumer, ".agents/context/index.md"))).to be(:include?, "Use the provider.")
 	end
 	
 	it "handles a provider containing only skills" do
 		File.delete(File.join(provider, "context/guide.md"))
 		installer.install(gem: "provider")
-		expect(File.read(File.join(consumer, ".agents/context/index.md"))).to be(:include?, "No context files are installed.")
+		expect(Dir.children(File.join(consumer, ".agents/context/provider"))).to be == []
 		expect(File).to be(:exist?, File.join(consumer, ".agents/skills/provider-workflow/SKILL.md"))
 	end
 	it "restores ordinary context when replacing a provider fails" do

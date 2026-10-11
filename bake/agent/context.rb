@@ -5,7 +5,6 @@
 # Copyright, 2025, by Samuel Williams.
 
 require_relative "../../lib/agent/context/installer"
-require_relative "../../lib/agent/context/index"
 
 include Agent::Context
 
@@ -56,17 +55,10 @@ def show(gem:, file:)
 	end
 end
 
-# Install ordinary context and skills, then refresh the generated index.
+# Install ordinary context and skills.
 # @parameter gem [String | Nil] An optional provider gem.
 def install(gem: nil)
 	installed = @installer.install(gem: gem)
 	puts "Installed context from: #{installed[:context].join(", ")}" unless installed[:context].empty?
 	puts "Installed skills: #{installed[:skills].join(", ")}" unless installed[:skills].empty?
-	puts "Updated .agents/context/index.md"
-end
-
-# Refresh the generated index of installed context.
-def index
-	Agent::Context::Index.new(@installer.context_path).update_index
-	puts "Updated .agents/context/index.md"
 end

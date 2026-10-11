@@ -1,5 +1,7 @@
 # Ruby and Claude's Great Adventure: How We Made Gems AI-Friendly
 
+This article describes the original release. See the [current usage guide](guides/getting-started/readme.md) for dependency context and skill installation.
+
 *Once upon a time, in the bustling world of software development, Ruby and Claude were having a conversation that would change everything...*
 
 ## The Problem: A Tale of Miscommunication
