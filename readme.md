@@ -199,6 +199,8 @@ Please see the [project releases](https://ioquatix.github.io/agent-context/relea
 
 We welcome contributions to this project.
 
+Read the [architecture design](design.md) for the current Ruby and Rust boundaries and the proposed alignment work.
+
 1.  Fork the repository.
 2.  Create your feature branch (`git checkout -b my-new-feature`).
 3.  Commit your changes (`git commit -am 'Add some feature.'`).
