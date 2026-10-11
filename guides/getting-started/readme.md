@@ -189,7 +189,7 @@ Include the complete source directories in your gem's packaged files. Skill docu
 
 ## Ownership and Updates
 
-Each installed skill directory contains `skill.json` to record its provider ecosystem, package, and version. Full Ruby refreshes reconcile gem-owned skills and remove stale skills. A selected-skill install updates the selected skill. Skill updates use staged replacements with rollback on failure.
+Each installed skill directory contains `skill.json` to record its provider ecosystem, package, and version. Full Ruby refreshes reconcile gem-owned skills and remove stale skills. A selected-skill install updates the selected skill. After resolving an installation error, rerun the command to refresh generated files.
 
 ## Example Context Files
 

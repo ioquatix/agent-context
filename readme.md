@@ -168,7 +168,7 @@ Skills are discovered through `type: skill` metadata in `context/*.md`, matching
 
 ## Ownership and Updates
 
-Each installed skill directory contains `skill.json` with its provider ecosystem, package, and version. Ruby refreshes reconcile gem-owned skills. Skill updates use staged replacements with rollback on failure. A full refresh removes stale gem-owned skills, including skills from removed or empty providers.
+Each installed skill directory contains `skill.json` with its provider ecosystem, package, and version. Ruby refreshes reconcile gem-owned skills. After resolving an installation error, rerun the command to refresh generated files. A full refresh removes stale gem-owned skills, including skills from removed or empty providers.
 
 See [the portable specification](specification.md) and [Getting Started](guides/getting-started/readme.md).
 

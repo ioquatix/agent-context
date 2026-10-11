@@ -45,7 +45,7 @@ The provider's tracked `context/` directory is source content. Installed depende
 
 Installation maintains local Git exclusions for generated context and exact dependency-installed skill directories. Track project-owned skills under `.agents/skills/` and remove blanket `/.agents/` ignore rules when adopting this layout.
 
-Each installed skill directory contains `skill.json` recording its provider ecosystem, package, and version. Skill discovery comes from source document metadata. Full Ruby skill refreshes reconcile gem-owned skills and remove stale skills. Skill updates use staged replacements with rollback on failure.
+Each installed skill directory contains `skill.json` recording its provider ecosystem, package, and version. Skill discovery comes from source document metadata. Full Ruby skill refreshes reconcile gem-owned skills and remove stale skills. After resolving an installation error, rerun the command to refresh generated files.
 
 ## Publish Context and Skills
 

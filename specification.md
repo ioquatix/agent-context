@@ -179,6 +179,8 @@ Context installation MUST follow these principles:
 3. **Preserve Structure**: The internal structure of ordinary context files MUST be preserved.
 4. **Skill Separation**: Skill documents and their resources MUST be installed as skills only, not duplicated as ordinary context.
 
+Consumers SHOULD validate document data as part of loading or parsing it and use that validated representation when applying changes. Installation MAY use direct file writes and copies. Consumers MUST report failures; completed changes and partially written output MAY remain after an error. After resolving the reported failure, consumers SHOULD support refreshing generated output by rerunning installation.
+
 ### 5.3 Installation Algorithm
 
 ```
@@ -219,11 +221,11 @@ Consumers MUST write `skill.json` inside each dependency-installed skill directo
 
 The ownership record MUST be a JSON object with non-empty string fields `ecosystem`, `package`, and `version`; whitespace-only values are invalid. Consumers MUST tolerate additional fields. Ruby gems use `ecosystem: gem`; Cargo crates use `ecosystem: cargo`. `package` is the provider's package name and `version` is the installed provider version.
 
-Consumers MUST discover installed ownership by scanning direct child directories of `.agents/skills/` for `skill.json`. The skills root and managed skill directories MUST be regular directories. Symbolic links and non-directory children are skipped. Ownership files MUST be regular files. Managed directory names MUST satisfy the installed skill name rules in section 4.4. Malformed or unreadable ownership MUST fail the operation before installed skills are changed. A directory without `skill.json` is project-owned.
+Consumers MUST discover installed ownership by scanning direct child directories of `.agents/skills/` for `skill.json`. The skills root and managed skill directories MUST be regular directories. Symbolic links and non-directory children are skipped. Ownership files MUST be regular files. Managed directory names MUST satisfy the installed skill name rules in section 4.4. Consumers MUST reject malformed or unreadable ownership when loading it. A directory without `skill.json` is project-owned.
 
 A full refresh reconciles only the installer's ecosystem; a package refresh reconciles only that ecosystem and package; installing one named skill retains other owned skills. Full reconciliation includes providers removed from the dependency graph and providers that become empty. Installers MUST retain skills owned by other ecosystems.
 
-Existing project-owned destinations and destinations owned by another ecosystem or package MUST NOT be replaced. Installers MUST validate selected sources and collisions, stage instructions, resources, and ownership together, and replace each skill directory by renaming the staged directory. They MUST restore previous directories, ownership, and Git exclusions if a replacement fails.
+Installers MUST restrict updates and removals of existing skill directories to the selected ecosystem and package scope, and MUST reject collisions with project-owned or differently owned destinations. Once a destination is accepted, installers MAY write instructions, resources, and ownership directly into the skill directory. When writing directly, installers SHOULD establish a valid `skill.json` before writing instructions and copying resources so a failure in those later steps leaves the destination identifiable as managed. The incremental failure behavior in section 5.2 applies to skill installation and Git exclusion updates.
 
 Top-level resource names `SKILL.md` and `skill.json` are reserved, case-insensitively, for generated files. Consumers MUST reject provider resources with either name, including directories. Nested resource files with these names MAY be copied as opaque assets.
 
