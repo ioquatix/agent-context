@@ -60,6 +60,15 @@ describe Agent::Context::Installer do
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents/context/index.md"))
 	end
 	
+	it "copies ordinary document metadata without interpreting descriptions" do
+		guide = "---\ndescription: {text: Provider metadata.}\n---\n\n# Guide\n"
+		File.write(File.join(provider, "context/guide.md"), guide)
+		
+		expect(installer.show_context_file("provider", "guide")).to be == guide
+		installer.install
+		expect(File.read(File.join(consumer, ".agents/context/provider/guide.md"))).to be == guide
+	end
+	
 	it "updates Git exclusions when a provider only has ordinary context" do
 		system("git", "init", "--quiet", consumer, exception: true)
 		File.delete(File.join(provider, "context/workflow.md"))
