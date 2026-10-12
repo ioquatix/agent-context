@@ -24,7 +24,7 @@ describe "Agent Context tasks" do
 			provider = File.join(root, "provider")
 			FileUtils.mkdir_p(File.join(provider, "context"))
 			File.write(File.join(provider, "context/guide.md"), "# Provider Guide\n\nUse the package.\n")
-			File.write(File.join(provider, "context/workflow.md"), "---\ntype: skill\ndescription: Run the workflow.\n---\n\n# Workflow\n")
+			File.write(File.join(provider, "context/workflow.md"), "---\nmetadata:\n  type: skill\ndescription: Run the workflow.\n---\n\n# Workflow\n")
 			specification = Gem::Specification.new do |spec|
 				spec.name = "provider"
 				spec.version = "1.0.0"

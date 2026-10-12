@@ -1,5 +1,6 @@
 ---
-type: skill
+metadata:
+  type: skill
 description: Install and navigate guidance and skills from Ruby gem dependencies, or publish context and skills from a gem using agent-context.
 ---
 
@@ -37,7 +38,7 @@ bundle exec bake agent:context:skill:install
 bundle exec bake agent:context:skill:install --gem agent-context --skill agent-context-usage
 ```
 
-Skill names are prefixed by the provider gem. `skill:install` refreshes all dependency skills by default; `--gem NAME` selects one provider and `--skill NAME` selects one installed skill name. This document installs as `agent-context-usage/SKILL.md`.
+An authored skill name determines its installed directory; a missing name defaults to `<gem>-<filename>`. `skill:install` refreshes all dependency skills by default; `--gem NAME` selects one provider and `--skill NAME` selects one installed skill name. This document installs as `agent-context-usage/SKILL.md`.
 
 ## Keep Sources and Installed Files Separate
 
@@ -45,7 +46,7 @@ The provider's tracked `context/` directory is source content. Installed depende
 
 Installation maintains local Git exclusions for generated context and exact dependency-installed skill directories. Track project-owned skills under `.agents/skills/` and remove blanket `/.agents/` ignore rules when adopting this layout.
 
-Each installed skill directory contains `skill.json` recording its provider ecosystem, package, and version. Skill discovery comes from source document metadata. Full Ruby skill refreshes reconcile gem-owned skills and remove stale skills. After resolving an installation error, rerun the command to refresh generated files.
+Installed `SKILL.md` front matter records `metadata.type: skill` and the resolved `metadata.ecosystem`, `metadata.package`, and `metadata.version`. Ruby refreshes reconcile skills within their selected ecosystem and package scope. A full refresh also removes skills from removed or empty providers. After resolving an installation error, rerun the command to refresh generated files.
 
 ## Publish Context and Skills
 
@@ -55,7 +56,8 @@ To publish a skill, add `context/workflow.md` with metadata describing when to u
 
 ```markdown
 ---
-type: skill
+metadata:
+  type: skill
 description: Set up a project using this gem's conventions.
 ---
 
@@ -64,6 +66,6 @@ description: Set up a project using this gem's conventions.
 Follow the setup instructions.
 ```
 
-The filename supplies the local name: gem `provider` installs this document as `.agents/skills/provider-workflow/SKILL.md`. Put companion resources in `context/workflow/`; they are copied alongside the generated instructions. The installer supplies the required skill `name`, removes the source `type`, and includes additional metadata. Top-level `SKILL.md` and `skill.json` are reserved for generated instructions and ownership.
+For this example, gem `provider` derives the missing name and installs the document as `.agents/skills/provider-workflow/SKILL.md`. Put companion resources in `context/workflow/`; they are copied alongside the generated instructions. The installer preserves an authored `name` and derives a missing name from the provider package and filename. It retains the description, additional metadata, and original Markdown body, and adds resolved provenance under `metadata`. The top-level resource name `SKILL.md` is reserved for generated instructions.
 
-Include `context/**/*` in the gemspec's packaged files. Installed skill names must use lowercase ASCII letters, digits, and single hyphens, with at most 64 characters including the package prefix. Descriptions must contain 1–1,024 characters and explain the task that should activate the skill.
+Include `context/**/*` in the gemspec's packaged files. Installed skill names must use lowercase ASCII letters, digits, and single hyphens, with at most 64 characters. Descriptions must contain 1–1,024 characters and explain the task that should activate the skill.

@@ -9,63 +9,85 @@ require "date"
 
 module Agent
 	module Context
-		# Represents a context document parsed into Markdown and metadata.
+		# Represents a Markdown source and its parsed front matter.
 		class Document
-			# Raised when context front matter cannot be safely interpreted.
+			# Raised when context front matter cannot be interpreted.
 			class Invalid < ArgumentError
 			end
 			
-			# Read and parse a document from its source path.
-			# @parameter path [String] The Markdown source file.
-			# @returns [Document] The parsed document.
+			# Read and parse a Markdown document.
 			def self.load(path)
 				parse(File.read(path), path: path)
 			end
 			
-			# Parse Markdown and validate its front matter.
-			# @parameter content [String] The Markdown source content.
-			# @parameter path [String] The source path used for error messages.
-			# @returns [Document] The parsed document.
+			# Parse YAML front matter using Markdown's native syntax tree.
 			def self.parse(content, path:)
-				parts = Markly.parse(content, flags: Markly::FRONT_MATTER).to_a
-				front_matter = parts.first if parts.first&.type == :front_matter
+				# Let Markly identify the front matter and its source boundary:
+				first = Markly.parse(content, flags: Markly::FRONT_MATTER).first_child
+				node = first if first&.type == :front_matter
+				language = node&.fence_info&.split&.first
 				
-				metadata = if front_matter
-					YAML.safe_load(
-						front_matter.string_content,
-						permitted_classes: [Date, Time],
-						aliases: false,
-						fallback: {},
-					)
-				else
-					{}
+				# Interpret YAML metadata, keeping other formats opaque:
+				frontmatter = {}
+				if node && [nil, "yaml", "yml"].include?(language)
+					frontmatter = YAML.safe_load(node.string_content, permitted_classes: [Date, Time], aliases: false, fallback: {})
+					raise Invalid, "Context frontmatter must be a mapping: #{path}" unless frontmatter.is_a?(Hash)
 				end
 				
-				raise Invalid, "Context frontmatter must be a mapping: #{path}" unless metadata.is_a?(Hash)
-				
-				new(content, front_matter, metadata)
+				new(path, content, node, frontmatter)
 			rescue Psych::Exception => error
 				raise Invalid, "Invalid YAML frontmatter in #{path}: #{error.message}"
 			end
 			
-			# Initialize a document from parsed Markdown and metadata.
-			# @parameter content [String] The original Markdown source content.
-			# @parameter front_matter [Markly::Node | Nil] The leading front matter node.
-			# @parameter metadata [Hash] The decoded front matter.
-			def initialize(content, front_matter, metadata)
+			# Retain the source and its parsed representation.
+			def initialize(path, content, node, frontmatter)
+				@path = path
 				@content = content
-				@front_matter = front_matter
-				@metadata = metadata
+				@node = node
+				@frontmatter = frontmatter
 			end
 			
-			# @attribute [Hash] Decoded context metadata.
-			attr_reader :metadata
+			# @attribute [String] The document source path.
+			attr_reader :path
 			
-			# @returns [String] The original Markdown body after the front matter node.
-			def body
-				return @content unless @front_matter
+			# @attribute [String] The original Markdown source.
+			attr_reader :content
+			
+			# @attribute [Hash] The decoded YAML front matter.
+			attr_reader :frontmatter
+			
+			# The extensible metadata mapping within front matter.
+			def metadata
+				value = @frontmatter["metadata"]
+				value.is_a?(Hash) ? value : {}
+			end
+			
+			# Classify documents from their context metadata.
+			def skill?
+				type = metadata["type"]
+				unless type.nil? || type == "skill"
+					raise Invalid, "Unsupported context type in #{@path}: #{type.inspect}"
+				end
 				
-				@content.lines.drop(@front_matter.source_position[:end_line]).join
+				type == "skill"
+			end
+			
+			# The original body following the parser's front matter boundary.
+			def body
+				return @content unless @node
+				
+				@content.lines.drop(@node.source_position[:end_line]).join
+			end
+			
+			# Serialize edited front matter through its AST node, preserving the body.
+			def render(frontmatter)
+				@node.string_content = YAML.dump(frontmatter).delete_prefix("---\n")
+				@node.to_markdown + body
+			end
+			
+			# Write the loaded source to its destination.
+			def write(path)
+				File.write(path, @content)
 			end
 		end
 	end

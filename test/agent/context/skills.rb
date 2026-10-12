@@ -24,7 +24,7 @@ describe Agent::Context::Installer do
 	def around
 		FileUtils.mkdir_p([File.join(provider, "context/workflow/references"), consumer])
 		File.write(File.join(provider, "context/guide.md"), "# Guide\n\nUse the provider.")
-		File.write(File.join(provider, "context/workflow.md"), "---\ntype: skill\ndescription: Run the workflow.\nlicense: MIT\n---\n\n# Workflow\n")
+		File.write(File.join(provider, "context/workflow.md"), "---\nmetadata:\n  type: skill\ndescription: Run the workflow.\nlicense: MIT\n---\n\n# Workflow\n")
 		File.write(File.join(provider, "context/workflow/references/checklist.md"), "# Checklist\n")
 		yield
 	ensure
@@ -103,14 +103,14 @@ describe Agent::Context::Installer do
 		guide = "--- yaml\ndate: 2026-10-09\nlayout: guide\n---\n\n# Guide\n\nUse the provider.\n"
 		File.write(File.join(provider, "context/guide.md"), guide)
 		body = "# Workflow\r\n\r\nUse  [reference][guide].\r\n\r\n~~~yaml\r\n---\r\nexample: unchanged\r\n---\r\n~~~\r\n\r\n[guide]: https://example.test\r\n"
-		File.binwrite(File.join(provider, "context/workflow.md"), "--- yaml\r\ntype: skill\r\nname: ignored\r\ndescription: Run the workflow.\r\ndate: 2026-10-09\r\nupdated: 2026-10-09T12:30:00Z\r\n---\r\n\r\n#{body}")
+		File.binwrite(File.join(provider, "context/workflow.md"), "--- yaml\r\nmetadata:\r\n  type: skill\r\nname: provider-workflow\r\ndescription: Run the workflow.\r\ndate: 2026-10-09\r\nupdated: 2026-10-09T12:30:00Z\r\n---\r\n\r\n#{body}")
 		expect(installer.install).to be == {context: ["provider"], skills: ["provider-workflow"]}
 		expect(File.read(File.join(consumer, ".agents/context/provider/guide.md"))).to be == guide
 		instructions = File.binread(File.join(consumer, ".agents/skills/provider-workflow/SKILL.md"))
 		expect(instructions).to be(:end_with?, body)
-		metadata = Agent::Context::Document.load(File.join(consumer, ".agents/skills/provider-workflow/SKILL.md")).metadata
+		metadata = Agent::Context::Document.load(File.join(consumer, ".agents/skills/provider-workflow/SKILL.md")).frontmatter
 		expect(metadata["name"]).to be == "provider-workflow"
-		expect(metadata).not.to be(:key?, "type")
+		expect(metadata["metadata"]["type"]).to be == "skill"
 		expect(metadata["date"]).to be == Date.new(2026, 10, 9)
 		expect(metadata["updated"]).to be == Time.utc(2026, 10, 9, 12, 30)
 	end
@@ -118,20 +118,20 @@ describe Agent::Context::Installer do
 	it "handles a provider containing only skills" do
 		File.delete(File.join(provider, "context/guide.md"))
 		installer.install(gem: "provider")
-		expect(Dir.children(File.join(consumer, ".agents/context/provider"))).to be == []
+		expect(File).not.to be(:exist?, File.join(consumer, ".agents/context/provider"))
 		expect(File).to be(:exist?, File.join(consumer, ".agents/skills/provider-workflow/SKILL.md"))
 	end
-	it "restores ordinary context when replacing a provider fails" do
+	
+	it "propagates context write failures and refreshes successfully on retry" do
 		installer.install
-		destination = File.join(consumer, ".agents/context/provider")
-		previous = File.read(File.join(destination, "guide.md"))
+		destination = File.join(consumer, ".agents/context/provider/guide.md")
 		File.write(File.join(provider, "context/guide.md"), "# Updated\n")
-		mock(File).before(:rename) do |source, target|
-			raise Errno::EACCES, "Injected context failure" if File.basename(source) == "new" && target == destination
+		mock(File).before(:write) do |path, *|
+			raise Errno::EACCES, "Injected context failure" if path == destination
 		end
-		expect do
-			installer.install_gem_context("provider")
-		end.to raise_exception(Errno::EACCES)
-		expect(File.read(File.join(destination, "guide.md"))).to be == previous
+		expect{installer.install_gem_context("provider")}.to raise_exception(Errno::EACCES)
+		mock(File).clear
+		installer.install_gem_context("provider")
+		expect(File.read(destination)).to be == "# Updated\n"
 	end
 end

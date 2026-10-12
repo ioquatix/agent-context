@@ -20,9 +20,9 @@ describe Agent::Context::Document do
 	
 	it "reads native front matter with a YAML format hint and standard dates" do
 		File.write(path, "--- yaml\ntitle: Metadata title\ndate: 2026-10-09\nupdated: 2026-10-09T12:30:00Z\n---\n\n# Actual Title\n\nFirst sentence. Second sentence.\n")
-		expect(document.metadata["title"]).to be == "Metadata title"
-		expect(document.metadata["date"]).to be == Date.new(2026, 10, 9)
-		expect(document.metadata["updated"]).to be == Time.utc(2026, 10, 9, 12, 30)
+		expect(document.frontmatter["title"]).to be == "Metadata title"
+		expect(document.frontmatter["date"]).to be == Date.new(2026, 10, 9)
+		expect(document.frontmatter["updated"]).to be == Time.utc(2026, 10, 9, 12, 30)
 	end
 	
 	it "preserves the body bytes and source file when front matter uses CRLF" do
@@ -36,13 +36,13 @@ describe Agent::Context::Document do
 	it "parses in-memory Markdown with thematic breaks and code examples" do
 		content = "# Guide\n\n---\n\n~~~yaml\n---\ntype: skill\n---\n~~~\n"
 		parsed = subject.parse(content, path: path)
-		expect(parsed.metadata).to be == {}
+		expect(parsed.frontmatter).to be == {}
 		expect(parsed.body).to be == content
 	end
 	
 	it "accepts empty front matter" do
 		File.write(path, "---\n---\n# Guide\n")
-		expect(document.metadata).to be == {}
+		expect(document.frontmatter).to be == {}
 		expect(document.body).to be == "# Guide\n"
 	end
 	
@@ -59,4 +59,34 @@ describe Agent::Context::Document do
 			document
 		end.to raise_exception(subject::Invalid, message: be(:include?, path))
 	end
+	it "edits native front matter while retaining the shared fixture body" do
+		fixture = File.read(File.expand_path("../../fixtures/SKILL.md", __dir__))
+		["\n", "\r\n"].each do |ending|
+			source = subject.parse(fixture.gsub("\n", ending), path: path)
+			output = source.render(source.frontmatter.merge("license" => "Apache-2.0"))
+			installed = subject.parse(output, path: path)
+			expect(installed.body).to be == source.body
+			expect(installed.frontmatter["license"]).to be == "Apache-2.0"
+			expect(installed.metadata["author"]).to be == "Provider"
+		end
+	end
+	
+	it "writes the source loaded before the provider file changes" do
+		File.write(path, "# Original\n")
+		loaded = document
+		File.write(path, "# Changed\n")
+		destination = File.join(directory, "installed.md")
+		loaded.write(destination)
+		expect(File.read(destination)).to be == "# Original\n"
+	end
+	
+	it "uses nested skill metadata and keeps other front matter languages opaque" do
+		["--- json\ninvalid: [\n---\n", "---\ntype: skill\nmetadata: unrelated\n---\n"].each do |content|
+			expect(subject.parse(content, path: path)).not.to be(:skill?)
+		end
+		expect do
+			subject.parse("---\nmetadata: {type: false}\n---\n", path: path).skill?
+		end.to raise_exception(subject::Invalid)
+	end
+	
 end

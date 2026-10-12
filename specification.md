@@ -148,9 +148,22 @@ Common file names:
 
 ### 4.4 Skill Documents
 
-A context provider may distribute an Agent Skill as a Markdown document directly inside `context/`. The document MUST use YAML front matter with `type: skill` and a non-empty `description`. Its filename, without the `.md` extension, is the local skill name. A directory with the same name MAY contain skill resources. Consumers MUST prefix the local name with the lowercase provider package name (with underscores normalized to hyphens) and a hyphen to produce the installed skill name. Installed names MUST use lowercase ASCII letters, digits, and single hyphens, contain 1–64 characters, and begin and end with a letter or digit. Descriptions MUST contain 1–1,024 characters after trimming whitespace. Consumers MUST validate these fields and preserve additional skill metadata; generated installed names take precedence over a source `name` field.
+A context provider may distribute an Agent Skill as a Markdown document directly inside `context/`. The document MUST use YAML front matter with `metadata.type: skill` and a non-empty top-level `description`:
 
-Consumers that support skills MUST install the document as `.agents/skills/<package-name>-<local-name>/SKILL.md`, with the installed name and `description` in its front matter. Files in the matching resource directory MUST be copied into that skill directory. Skill documents and their resources MUST NOT also be copied into `.agents/context/`.
+```yaml
+---
+name: provider-workflow
+description: Run the provider workflow when preparing a project.
+metadata:
+  type: skill
+---
+```
+
+An authored top-level `name` MUST be preserved and used as the installed directory name. When `name` is absent, consumers MUST derive it from the lowercase provider package name (normalizing underscores to hyphens), a hyphen, and the source filename without its `.md` extension. Installed names MUST use lowercase ASCII letters, digits, and single hyphens, contain 1–64 characters, and begin and end with a letter or digit. Descriptions MUST contain 1–1,024 characters after trimming whitespace for validation; consumers MUST retain the authored description value.
+
+Consumers MUST install the document as `.agents/skills/<name>/SKILL.md`. A companion directory named after the source filename without its extension MAY provide resources, independently of the installed name. Its files MUST be copied into the installed skill directory. Consumers MUST retain additional top-level fields and nested metadata, except for the resolved installation provenance defined in section 7. Skill documents and their resources belong exclusively to the installed skill.
+
+Consumers MUST use their Markdown parser's front matter node to read and serialize front matter. YAML decoding and encoding operate on that node's raw value. Consumers MUST preserve the original Markdown body after the parser's front matter boundary. Front matter formatting may be normalized during serialization.
 
 Dependency-installed skill directories SHOULD be excluded from version control, while project-owned skills in `.agents/skills/` SHOULD remain trackable. Git integrations SHOULD add exact dependency-installed skill paths to `.git/info/exclude` rather than ignore the entire `.agents/skills/` directory. They SHOULD mark generated entries with comments and preserve user-authored rules outside that marked section.
 
@@ -209,26 +222,30 @@ Context installation MUST NOT create or modify the repository owner's `agents.md
 
 ## 7. Skill Installation Ownership
 
-Consumers MUST write `skill.json` inside each dependency-installed skill directory, alongside `SKILL.md`:
+Consumers MUST record resolved installation provenance inside `SKILL.md` front matter:
 
-```json
-{
-  "ecosystem": "cargo",
-  "package": "provider",
-  "version": "1.0.0"
-}
+```yaml
+---
+name: provider-workflow
+description: Run the provider workflow when preparing a project.
+metadata:
+  type: skill
+  ecosystem: cargo
+  package: provider
+  version: "1.0.0"
+---
 ```
 
-`SKILL.md` provides agent-facing metadata and instructions. `skill.json` records installation ownership.
+The installer supplies `metadata.ecosystem`, `metadata.package`, and `metadata.version` from its resolved provider, overriding source values for these fields. Ruby gems use `gem`; Cargo crates use `cargo`. These three fields MUST be non-empty strings, including a quoted version when YAML would otherwise decode it as a number. Additional metadata MUST be retained.
 
-The ownership record MUST be a JSON object with non-empty string fields `ecosystem`, `package`, and `version`; whitespace-only values are invalid. Consumers MUST tolerate additional fields. Ruby gems use `ecosystem: gem`; Cargo crates use `ecosystem: cargo`. `package` is the provider's package name and `version` is the installed provider version.
+Consumers MUST discover ownership by scanning direct child directories of `.agents/skills/` and parsing their `SKILL.md` files. The skills root and managed skill directories MUST be regular directories. Symbolic links and non-directory children are skipped. Instruction files MUST be regular files. Managed directory names MUST satisfy section 4.4.
 
-Consumers MUST discover installed ownership by scanning direct child directories of `.agents/skills/` for `skill.json`. The skills root and managed skill directories MUST be regular directories. Symbolic links and non-directory children are skipped. Ownership files MUST be regular files. Managed directory names MUST satisfy the installed skill name rules in section 4.4. Consumers MUST reject malformed or unreadable ownership when loading it. A directory without `skill.json` is project-owned.
+`metadata.type: skill` together with an explicit `metadata.ecosystem` identifies installation provenance. Consumers MUST validate the complete provenance tuple after recognizing that discriminator, and report malformed or unreadable metadata. Other directories are project-owned; an authored `metadata.version` alone is ordinary skill metadata.
 
-A full refresh reconciles only the installer's ecosystem; a package refresh reconciles only that ecosystem and package; installing one named skill retains other owned skills. Full reconciliation includes providers removed from the dependency graph and providers that become empty. Installers MUST retain skills owned by other ecosystems.
+A full refresh reconciles the installer's ecosystem; a package refresh reconciles that ecosystem and package; installing one named skill retains other owned skills. Full reconciliation includes providers removed from the dependency graph and providers that become empty. Consumers MUST retain skills belonging to other ecosystems and packages outside the requested scope, and MUST reject conflicting destinations.
 
-Installers MUST restrict updates and removals of existing skill directories to the selected ecosystem and package scope, and MUST reject collisions with project-owned or differently owned destinations. Once a destination is accepted, installers MAY write instructions, resources, and ownership directly into the skill directory. When writing directly, installers SHOULD establish a valid `skill.json` before writing instructions and copying resources so a failure in those later steps leaves the destination identifiable as managed. The incremental failure behavior in section 5.2 applies to skill installation and Git exclusion updates.
+Installers SHOULD write `SKILL.md` before copying companion resources, establishing ownership for subsequent refreshes. If writing the instructions fails, installers SHOULD remove that incomplete destination. Resource-copy failures leave completed instructions in place. The incremental failure behavior in section 5.2 applies to skills and Git exclusion updates.
 
-Top-level resource names `SKILL.md` and `skill.json` are reserved, case-insensitively, for generated files. Consumers MUST reject provider resources with either name, including directories. Nested resource files with these names MAY be copied as opaque assets.
+The top-level resource name `SKILL.md` is reserved case-insensitively for generated instructions. Consumers MUST reject a resource file or directory with that name. Nested files with that name and other resource names are copied as opaque assets.
 
-Git integrations SHOULD maintain one marked exclusion block per consuming project, covering generated context and exact dependency-owned skill directories from all ecosystems. Exclusion paths MUST be relative to the Git repository root. Nested projects SHOULD identify their block by appending the repository-relative project path, with a trailing slash, to the `# BEGIN bake-agent-context` and `# END bake-agent-context` markers. They MUST retain user-authored rules and blocks belonging to other projects. The ownership file is excluded with its containing skill directory.
+Git integrations SHOULD maintain one marked exclusion block per consuming project, covering generated context and exact dependency-owned skill directories from all ecosystems. Exclusion paths MUST be relative to the Git repository root. Nested projects SHOULD identify their block by appending the repository-relative project path, with a trailing slash, to the `# BEGIN bake-agent-context` and `# END bake-agent-context` markers. They MUST retain user-authored rules and blocks belonging to other projects. Installed instructions and resources are excluded with their containing skill directory.

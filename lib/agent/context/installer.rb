@@ -2,178 +2,108 @@
 
 # Released under the MIT License.
 # Copyright, 2025, by Shopify Inc.
-# Copyright, 2025, by Samuel Williams.
+# Copyright, 2025-2026, by Samuel Williams.
 
 require "rubygems"
-require "fileutils"
 require "pathname"
-require "tmpdir"
-
 require_relative "paths"
-require "agent/context/skills/installer"
+require_relative "skills/installer"
+require_relative "package"
 
 module Agent
 	module Context
-		# Installer class for managing context files from Ruby gems.
-		# 
-		# This class provides methods to find, list, show, and install context files
-		# from gems that provide them in a `context/` directory.
+		# Represents discovery and installation of context from resolved Ruby gems.
 		class Installer
-			# Initialize a new Installer instance.
-			#
-			# @parameter root [String] The root directory to work from (default: current directory).
-			# @parameter specifications [Gem::Specification] The gem specifications to search (default: all installed gems).
+			# Retain the consuming project and gem specifications.
 			def initialize(root: Dir.pwd, specifications: ::Gem::Specification)
 				@root = File.expand_path(root)
 				@context_path = File.join(@root, CONTEXT_PATH)
 				@specifications = specifications
-				@skills = Agent::Context::Skills::Installer.new(root: @root, specifications: @specifications)
 			end
 			
+			# @attribute [String] The consuming project root.
 			attr_reader :root
+			
+			# @attribute [String] The installed context directory.
 			attr_reader :context_path
 			
-			# Find all gems that have a context directory
+			# Find providers with ordinary context.
 			def find_gems_with_context(skip_local: true)
-				gems_with_context = []
-				
-				@specifications.each do |spec|
-					# Skip gems loaded from current working directory if requested:
-					next if skip_local && File.expand_path(spec.full_gem_path) == @root
-					
-					context_path = File.join(spec.full_gem_path, "context")
-					if Dir.exist?(context_path)
-						gems_with_context << {
-							name: spec.name,
-							version: spec.version.to_s,
-							summary: spec.summary,
-							metadata: spec.metadata,
-							path: context_path
-						}
-					end
-				end
-				
-				gems_with_context
+				packages(skip_local: skip_local).reject{|package| package.files.empty?}.map(&:information)
 			end
 			
-			# Find a specific gem with context.
+			# Find one provider with ordinary context.
 			def find_gem_with_context(gem_name)
-				spec = @specifications.find{|spec| spec.name == gem_name}
-				return nil unless spec
-				
-				context_path = File.join(spec.full_gem_path, "context")
-				
-				if Dir.exist?(context_path)
-					{
-						name: spec.name,
-						version: spec.version.to_s,
-						summary: spec.summary,
-						metadata: spec.metadata,
-						path: context_path
-					}
-				else
-					nil
-				end
+				package = packages(gem: gem_name).first
+				package.information if package && !package.files.empty?
 			end
 			
-			# List context files for a gem.
+			# List a provider's ordinary context paths.
 			def list_context_files(gem_name)
-				gem = find_gem_with_context(gem_name)
-				return nil unless gem
-				
-				skill_paths = Array(@skills.list_skills(gem_name)).flat_map do |skill|
-					[skill.source_file, skill.path].compact
-				end
-				
-				Dir.glob(File.join(gem[:path], "**/*"), File::FNM_DOTMATCH).select do |file|
-					next unless File.file?(file) && !File.symlink?(file)
-					
-					skill_paths.none?{|path| file == path || file.start_with?("#{path}/")}
-				end
+				package = packages(gem: gem_name).first
+				package.files.keys if package && !package.files.empty?
 			end
 			
-			# Show content of a specific context file.
+			# Read a selected ordinary context document or resource.
 			def show_context_file(gem_name, file_name)
-				gem = find_gem_with_context(gem_name)
-				return nil unless gem
-				
+				# Resolve the requested path within the loaded provider files:
 				requested = Pathname.new(file_name)
 				if requested.absolute? || requested.each_filename.any?{|part| part == ".."}
 					raise ArgumentError, "Context file must be a relative path inside context/"
 				end
 				
-				candidates = [File.join(gem[:path], file_name)]
+				package = packages(gem: gem_name).first
+				return unless package
+				candidates = [File.join(package.path, file_name)]
 				candidates << "#{candidates.first}.md" if File.extname(file_name).empty?
+				path = candidates.find{|candidate| package.files.key?(candidate)}
+				return unless path
 				
-				available = list_context_files(gem_name)
-				path = candidates.find{|candidate| available.include?(candidate)}
-				
-				path ? File.read(path) : nil
+				# Return loaded Markdown or read the selected opaque resource:
+				package.files[path]&.content || File.read(path)
 			end
 			
-			# Install context from a specific gem.
+			# Refresh ordinary context for one provider.
 			def install_gem_context(gem_name)
-				gem = find_gem_with_context(gem_name)
-				return false unless gem
-				
-				files = list_context_files(gem_name)
-				target_path = File.join(@context_path, gem_name)
-				
-				FileUtils.mkdir_p(@context_path)
-				Dir.mktmpdir(".agent-context-staging-", @context_path) do |stage|
-					fresh = File.join(stage, "new")
-					backup = File.join(stage, "old")
-					FileUtils.mkdir_p(fresh)
-					
-					files.each do |source|
-						relative = Pathname.new(source).relative_path_from(Pathname.new(gem[:path])).to_s
-						destination = File.join(fresh, relative)
-						FileUtils.mkdir_p(File.dirname(destination))
-						FileUtils.copy_file(source, destination, true)
-					end
-					
-					previous = File.exist?(target_path) || File.symlink?(target_path)
-					File.rename(target_path, backup) if previous
-					
-					begin
-						File.rename(fresh, target_path)
-					rescue
-						File.rename(backup, target_path) if previous
-						raise
-					end
-				end
-				
-				true
+				package = packages(gem: gem_name).first
+				package ? package.install(File.join(@context_path, package.name)) : false
 			end
 			
-			# Install context from all gems.
+			# Refresh ordinary context for all selected providers.
 			def install_all_context(skip_local: true)
-				gems = find_gems_with_context(skip_local: skip_local)
-				installed = []
-				
-				gems.each do |gem|
-					if install_gem_context(gem[:name])
-						installed << gem[:name]
-					end
+				packages(skip_local: skip_local).filter_map do |package|
+					package.name if package.install(File.join(@context_path, package.name))
 				end
-				
-				installed
 			end
 			
-			# Install context and skills.
-			# @parameter gem [String | Nil] An optional provider gem.
-			# @returns [Hash(Symbol, Array(String))] The installed provider and skill names.
+			# Install context and skills from the same loaded provider documents.
 			def install(gem: nil)
-				installed_skills = @skills.install(gem: gem)
-				installed_context = if gem
-					install_gem_context(gem) ? [gem] : []
-				else
-					install_all_context
-				end
+				# Resolve providers and parse their documents once:
+				selected = packages(gem: gem)
+				raise Skills::Installer::Error, "No gem found: #{gem}" if gem && selected.empty?
+				definitions = selected.flat_map(&:skills)
 				
+				# Refresh skills and ordinary context using that loaded representation:
+				skills = Skills::Installer.new(root: @root, specifications: @specifications)
+				installed_skills = skills.install_definitions(definitions, package: gem, reconcile: true)
+				installed_context = selected.filter_map do |package|
+					package.name if package.install(File.join(@context_path, package.name))
+				end
 				{context: installed_context, skills: installed_skills}
 			end
 			
+			private
+			
+			def packages(gem: nil, skip_local: true)
+				specifications = @specifications.select do |specification|
+					gem ? specification.name == gem : !skip_local || File.expand_path(specification.full_gem_path) != @root
+				end
+				if gem && specifications.length > 1
+					raise Skills::Installer::Conflict, "Multiple resolved versions provide gem #{gem.inspect}"
+				end
+				
+				specifications.map{|specification| Package.load(specification)}
+			end
 		end
 	end
 end

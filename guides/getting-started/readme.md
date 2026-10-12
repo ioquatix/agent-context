@@ -173,7 +173,8 @@ To provide a skill, put a Markdown document directly inside `context/`:
 
 ```markdown
 ---
-type: skill
+metadata:
+  type: skill
 description: Follow the workflow when setting up this package.
 ---
 
@@ -182,13 +183,13 @@ description: Follow the workflow when setting up this package.
 Follow the setup instructions.
 ```
 
-`context/workflow.md` in gem `provider` installs as `provider-workflow/SKILL.md`. The matching `context/workflow/` directory supplies resources. The generated instructions include additional skill metadata. Installed names must use lowercase ASCII letters, digits and single hyphens, with at most 64 characters. Descriptions must contain 1–1,024 characters.
+`context/workflow.md` in gem `provider` defaults to `provider-workflow/SKILL.md`. An authored `name` is preserved and used as the installed directory name. The matching `context/workflow/` directory supplies resources. The generated instructions include additional skill metadata. Installed names must use lowercase ASCII letters, digits and single hyphens, with at most 64 characters. Descriptions must contain 1–1,024 characters.
 
 Include the complete source directories in your gem's packaged files. Skill documents and resource trees are installed under `.agents/skills/`.
 
 ## Ownership and Updates
 
-Each installed skill directory contains `skill.json` to record its provider ecosystem, package, and version. Full Ruby refreshes reconcile gem-owned skills and remove stale skills. A selected-skill install updates the selected skill. After resolving an installation error, rerun the command to refresh generated files.
+Installed `SKILL.md` front matter records `metadata.type: skill` and the resolved `metadata.ecosystem`, `metadata.package`, and `metadata.version`. Ruby refreshes reconcile skills within their selected ecosystem and package scope. A full refresh also removes skills from removed or empty providers. After resolving an installation error, rerun the command to refresh generated files.
 
 ## Example Context Files
 

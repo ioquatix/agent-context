@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Store resolved skill provenance in `SKILL.md` front matter under `metadata`, with `metadata.type: skill` declaring skills.
+- Preserve authored names, descriptions, additional metadata, and the original Markdown body using native front matter AST nodes.
+- Share loaded documents between context and skill installation, and use direct writes with rerunnable progress.
 - Discover dependency guidance through installed Markdown files and the list/show commands. Remove generated indexes and the `agent:context:index` task.
 
 ## v0.3.0

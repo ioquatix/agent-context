@@ -6,7 +6,7 @@
 require "agent/context/installer"
 require "tmpdir"
 
-describe Agent::Context::Skills::Exclusion do
+describe Agent::Context::Exclusion do
 	let(:directory) {Dir.mktmpdir}
 	
 	def around
@@ -17,7 +17,7 @@ describe Agent::Context::Skills::Exclusion do
 	
 	it "scopes Git exclusions to each project in a repository" do
 		system("git", "init", "--quiet", directory, exception: true)
-		exclusion = Agent::Context::Skills::Exclusion
+		exclusion = Agent::Context::Exclusion
 		["", "apps/web [dev]", "apps/worker"].each do |relative|
 			root = File.join(directory, relative)
 			FileUtils.mkdir_p(root)
@@ -46,7 +46,7 @@ describe Agent::Context::Skills::Exclusion do
 		File.write(exclude, "user-rule\n")
 		skill = File.join(directory, ".agents", "skills", "cargo-workflow")
 		FileUtils.mkdir_p(skill)
-		Agent::Context::Skills::Ownership.write(skill, "provider", "1.0", ecosystem: "cargo")
+		File.write(File.join(skill, "SKILL.md"), "---\nmetadata:\n  type: skill\n  ecosystem: cargo\n  package: provider\n  version: 1.0.0\n---\n")
 		Agent::Context::Installer.new(root: directory, specifications: []).install
 		first = File.read(exclude)
 		Agent::Context::Installer.new(root: directory, specifications: []).install

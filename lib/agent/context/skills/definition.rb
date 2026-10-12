@@ -12,6 +12,67 @@ module Agent
 		module Skills
 			# Represents a dependency skill declared by a context document and its resources.
 			class Definition
+				# Build instructions from a parsed skill document and its provider.
+				def self.from_document(source, specification)
+					# Preserve authored names and derive missing names from the provider and file:
+					file = source.path
+					local_name = File.basename(file, File.extname(file))
+					installed_name = source.frontmatter.fetch("name"){"#{specification.name.downcase.tr("_", "-")}-#{local_name}"}
+					
+					# Add the resolved provider identity to the authored front matter:
+					frontmatter = source.frontmatter.merge("name" => installed_name)
+					frontmatter["metadata"] = source.metadata.merge(
+						"ecosystem" => "gem",
+						"package" => specification.name,
+						"version" => specification.version.to_s,
+					)
+					validate_metadata(frontmatter, file)
+					
+					# Resolve resources using the source filename:
+					assets = File.join(File.dirname(file), local_name)
+					if File.exist?(assets) || File.symlink?(assets)
+						unless File.lstat(assets).directory?
+							raise Installer::InvalidSkill, "Skill resources must be a regular directory: #{assets}"
+						end
+					else
+						assets = nil
+					end
+					
+					document = source.render(frontmatter)
+					
+					new(
+						name: installed_name,
+						description: frontmatter["description"],
+						path: assets,
+						source_file: file,
+						document: document,
+						provider_name: specification.name,
+						provider_version: specification.version.to_s,
+					)
+				end
+				
+				# Validate an installed directory name.
+				def self.validate_name(name, file)
+					unless name.is_a?(String) && name.match?(Ownership::NAME_PATTERN) && name.length <= 64
+						raise Installer::InvalidSkill, "Invalid skill name in #{file}: #{name.inspect}"
+					end
+				end
+				
+				# Validate the required authored skill fields.
+				def self.validate_metadata(frontmatter, file)
+					validate_name(frontmatter["name"], file)
+					
+					description = frontmatter["description"]
+					unless description.is_a?(String)
+						raise Installer::InvalidSkill, "Invalid skill description in #{file}"
+					end
+					
+					description = description.strip
+					if description.empty? || description.length > 1024
+						raise Installer::InvalidSkill, "Invalid skill description in #{file}"
+					end
+				end
+				
 				# Initialize a skill from a context document.
 				# @parameter name [String] The installed skill name.
 				# @parameter description [String] When to use the skill.
@@ -57,14 +118,17 @@ module Agent
 					@document
 				end
 				
-				# Write instructions and resources into a staging directory.
-				# @parameter destination [String] The staging directory.
+				# Write instructions before resources so ownership is available during refresh.
+				# @parameter destination [String] The installed skill directory.
 				def write_to(destination)
 					FileUtils.mkdir_p(destination)
+					begin
+						File.write(File.join(destination, "SKILL.md"), @document)
+					rescue
+						FileUtils.rm_rf(destination)
+						raise
+					end
 					copy_resources(@path, destination, true) if @path
-					
-					File.write(File.join(destination, "SKILL.md"), @document)
-					Ownership.write(destination, @provider_name, @provider_version)
 				end
 				
 				private
@@ -79,7 +143,7 @@ module Agent
 							raise Installer::InvalidSkill, "Skill resources must be regular files or directories: #{from}"
 						end
 						
-						if top_level && ["skill.md", Ownership::FILE_NAME].include?(name.downcase)
+						if top_level && name.downcase == "skill.md"
 							raise Installer::InvalidSkill, "#{name} is reserved for generated skill files: #{from}"
 						end
 						

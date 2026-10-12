@@ -125,7 +125,8 @@ A root-level context document can declare a skill:
 
 ```markdown
 ---
-type: skill
+metadata:
+  type: skill
 description: Run the provider's workflow when preparing a new project.
 license: MIT
 ---
@@ -135,13 +136,13 @@ license: MIT
 Follow these instructions.
 ```
 
-`context/workflow.md` from gem `provider` becomes `.agents/skills/provider-workflow/SKILL.md`. Resources in `context/workflow/` are copied alongside the instructions. Installed names have a 64-character limit; descriptions have a 1,024-character limit. The generated instructions include additional skill metadata.
+`context/workflow.md` from gem `provider` defaults to `.agents/skills/provider-workflow/SKILL.md`. Resources in `context/workflow/` are copied alongside the instructions. Installed names have a 64-character limit; descriptions have a 1,024-character limit. The generated instructions include additional skill metadata.
 
-Skills are discovered through `type: skill` metadata in `context/*.md`, matching `bake-agent-context-rust`. Include `context/**/*` in your gem's file list. Installed skill names become package-prefixed.
+Skills are discovered through `metadata.type: skill` metadata in `context/*.md`, matching `bake-agent-context-rust`. Include `context/**/*` in your gem's file list. Authored skill names are preserved; missing names default to `<package>-<filename>`.
 
 ## Ownership and Updates
 
-Each installed skill directory contains `skill.json` with its provider ecosystem, package, and version. Ruby refreshes reconcile gem-owned skills. After resolving an installation error, rerun the command to refresh generated files. A full refresh removes stale gem-owned skills, including skills from removed or empty providers.
+Installed `SKILL.md` front matter records `metadata.type: skill` and the resolved `metadata.ecosystem`, `metadata.package`, and `metadata.version`. Ruby refreshes reconcile skills within their selected ecosystem and package scope. A full refresh also removes skills from removed or empty providers. After resolving an installation error, rerun the command to refresh generated files.
 
 See [the portable specification](specification.md) and [Getting Started](guides/getting-started/readme.md).
 

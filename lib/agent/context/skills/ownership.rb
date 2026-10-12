@@ -4,28 +4,18 @@
 # Copyright, 2026, by Shopify Inc.
 # Copyright, 2026, by Samuel Williams.
 
-require "json"
+require_relative "../document"
 
 module Agent
 	module Context
 		module Skills
 			# Represents installation ownership recorded in each skill directory.
 			class Ownership
-				FILE_NAME = "skill.json"
+				FILE_NAME = "SKILL.md"
 				NAME_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
 				
 				# Raised when installed ownership cannot be safely interpreted.
 				class Invalid < StandardError
-				end
-				
-				# Write ownership into a staged skill directory.
-				# @parameter directory [String] The staged skill directory.
-				# @parameter package [String] The provider package.
-				# @parameter version [String] The provider version.
-				# @parameter ecosystem [String] The provider ecosystem.
-				def self.write(directory, package, version, ecosystem: "gem")
-					owner = {"ecosystem" => ecosystem, "package" => package, "version" => version}
-					File.write(File.join(directory, FILE_NAME), JSON.pretty_generate(owner) + "\n")
 				end
 				
 				# Read a skill's installation ownership.
@@ -42,17 +32,17 @@ module Agent
 					
 					raise Invalid, "Skill ownership must be a regular file: #{path}" unless stat.file?
 					
-					owner = JSON.parse(File.read(path))
-					raise Invalid, "Invalid skill ownership: #{path}" unless owner.is_a?(Hash)
+					metadata = Document.load(path).metadata
+					fields = ["ecosystem", "package", "version"]
+					return unless metadata["type"] == "skill" && metadata.key?("ecosystem")
 					
-					values = owner.values_at("ecosystem", "package", "version")
-					unless values.all?{|value| value.is_a?(String) && !value.strip.empty?}
+					unless fields.all?{|field| metadata[field].is_a?(String) && !metadata[field].strip.empty?}
 						raise Invalid, "Invalid skill ownership: #{path}"
 					end
 					
-					owner
-				rescue JSON::ParserError => error
-					raise Invalid, "Invalid skill ownership #{path}: #{error.message}"
+					metadata.slice(*fields)
+				rescue Document::Invalid => error
+					raise Invalid, error.message
 				end
 				
 				# Collect ownership from installed skill directories.
