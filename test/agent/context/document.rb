@@ -4,6 +4,7 @@
 # Copyright, 2026, by Samuel Williams.
 
 require "agent/context/document"
+require "agent/context/test_document"
 require "tmpdir"
 require "fileutils"
 
@@ -59,8 +60,9 @@ describe Agent::Context::Document do
 			document
 		end.to raise_exception(subject::Invalid, message: be(:include?, path))
 	end
+	
 	it "edits native front matter while retaining the shared fixture body" do
-		fixture = File.read(File.expand_path("../../fixtures/SKILL.md", __dir__))
+		fixture = File.read(Agent::Context::TestDocument.path)
 		["\n", "\r\n"].each do |ending|
 			source = subject.parse(fixture.gsub("\n", ending), path: path)
 			output = source.render(source.frontmatter.merge("license" => "Apache-2.0"))

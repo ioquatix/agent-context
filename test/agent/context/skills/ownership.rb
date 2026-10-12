@@ -4,6 +4,7 @@
 # Copyright, 2026, by Shopify Inc.
 
 require "agent/context/skills/ownership"
+require "agent/context/test_document"
 require "fileutils"
 require "tmpdir"
 
@@ -24,11 +25,9 @@ describe Agent::Context::Skills::Ownership do
 	end
 	
 	it "reads ownership from the shared installed skill fixture" do
-		fixture = File.expand_path("../../../fixtures/SKILL.md", __dir__)
-		FileUtils.copy_file(fixture, File.join(skill_path, "SKILL.md"))
+		FileUtils.copy_file(Agent::Context::TestDocument.path, File.join(skill_path, "SKILL.md"))
 		expected = {"ecosystem" => "cargo", "package" => "provider", "version" => "1.0.0"}
 		expect(subject.load(skill_path)).to be == expected
-		
 	end
 	
 	it "scans owned directories alongside project skills and other files" do
