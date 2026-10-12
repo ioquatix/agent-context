@@ -194,15 +194,11 @@ describe Agent::Context::Skills::Installer do
 			expect(installer.find_gems_with_skills).to be == []
 		end
 		
-		it "reports unsupported context types before installation" do
-			file = File.join(provider_root, "context/ruby-testing.md")
+		it "installs skills alongside unfamiliar context types" do
+			file = File.join(provider_root, "context/guide.md")
 			File.write(file, "---\nmetadata:\n  type: unknown\n---\n\n# Instructions\n")
 			
-			expect do
-				installer.install
-			end.to raise_exception(Agent::Context::Skills::Installer::InvalidSkill)
-			
-			expect(File).not.to be(:exist?, installer.skills_path)
+			expect(installer.install).to be == ["fake-gem-ruby-testing"]
 		end
 		
 		it "requires a nonempty string description" do
@@ -333,7 +329,7 @@ describe Agent::Context::Skills::Installer do
 		installer.install
 		content = File.read(File.join(consumer_root, ".agents/skills/fake-gem-workflow/SKILL.md"))
 		expect(installer.list_skills("fake-gem").find{|skill| skill.name == "fake-gem-workflow"}.description).to be == "  #{"é" * 1024}  "
-		expect(Agent::Context::Document.parse(content, path: "installed").frontmatter["description"]).to be == "  #{"é" * 1024}  "
+		expect(Agent::Context::Document.parse(content, "installed").frontmatter["description"]).to be == "  #{"é" * 1024}  "
 	end
 	
 	it "keeps plain guides out of skills and rejects invalid context skill metadata" do

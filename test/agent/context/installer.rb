@@ -148,6 +148,17 @@ describe Agent::Context::Installer do
 				expect(File).to be(:exist?, File.join(target_context_path, "getting-started.md"))
 				expect(File).to be(:exist?, File.join(target_context_path, "configuration.md"))
 			end
+			
+			it "copies unfamiliar context types alongside skills" do
+				guide = "---\nmetadata:\n  type: guide\n---\n\n# Guide\n"
+				File.write(File.join(context_path, "guide.md"), guide)
+				File.write(File.join(context_path, "workflow.md"), "---\nmetadata:\n  type: skill\ndescription: Run the workflow.\n---\n\n# Workflow\n")
+				helper = subject.new(root: @target_path, specifications: @specifications)
+				
+				expect(helper.install).to be == {context: ["fake-gem"], skills: ["fake-gem-workflow"]}
+				expect(File.read(File.join(helper.context_path, "fake-gem/guide.md"))).to be == guide
+				expect(File.read(File.join(@target_path, ".agents/skills/fake-gem-workflow/SKILL.md"))).to be(:include?, "# Workflow")
+			end
 		end
 	end
 	

@@ -161,7 +161,7 @@ metadata:
 ---
 ```
 
-Within a context document's YAML `metadata` mapping, an absent or null `type` denotes ordinary context; the string `skill` declares a skill. Consumers MUST reject any other non-null `metadata.type` value and report it as an unsupported context type.
+Within a context document's YAML `metadata` mapping, the string `skill` declares a skill. Consumers MUST treat all other `metadata.type` values, including absent, null, and unfamiliar values, as ordinary context. This allows providers to introduce new types while existing consumers continue installing their documents.
 
 An authored top-level `name` MUST be preserved and used as the installed directory name. When `name` is absent, consumers MUST derive it from the lowercase provider package name (normalizing underscores to hyphens), a hyphen, and the source filename without its `.md` extension. Installed names MUST use lowercase ASCII letters, digits, and single hyphens, contain 1–64 characters, and begin and end with a letter or digit. Descriptions MUST contain 1–1,024 characters after trimming whitespace for validation; consumers MUST retain the authored description value.
 

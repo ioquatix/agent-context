@@ -36,7 +36,7 @@ describe Agent::Context::Document do
 	
 	it "parses in-memory Markdown with thematic breaks and code examples" do
 		content = "# Guide\n\n---\n\n~~~yaml\n---\ntype: skill\n---\n~~~\n"
-		parsed = subject.parse(content, path: path)
+		parsed = subject.parse(content, path)
 		expect(parsed.frontmatter).to be == {}
 		expect(parsed.body).to be == content
 	end
@@ -64,9 +64,9 @@ describe Agent::Context::Document do
 	it "edits native front matter while retaining the shared fixture body" do
 		fixture = File.read(Agent::Context::TestDocument.path)
 		["\n", "\r\n"].each do |ending|
-			source = subject.parse(fixture.gsub("\n", ending), path: path)
+			source = subject.parse(fixture.gsub("\n", ending), path)
 			output = source.render(source.frontmatter.merge("license" => "Apache-2.0"))
-			installed = subject.parse(output, path: path)
+			installed = subject.parse(output, path)
 			expect(installed.body).to be == source.body
 			expect(installed.frontmatter["license"]).to be == "Apache-2.0"
 			expect(installed.metadata["author"]).to be == "Provider"
@@ -83,12 +83,22 @@ describe Agent::Context::Document do
 	end
 	
 	it "uses nested skill metadata and keeps other front matter languages opaque" do
-		["--- json\ninvalid: [\n---\n", "---\ntype: skill\nmetadata: unrelated\n---\n"].each do |content|
-			expect(subject.parse(content, path: path)).not.to be(:skill?)
+		["--- json\ninvalid: [\n---\n", "--- yml\ninvalid: [\n---\n", "---\ntype: skill\n---\n"].each do |content|
+			expect(subject.parse(content, path)).not.to be(:skill?)
 		end
-		expect do
-			subject.parse("---\nmetadata: {type: false}\n---\n", path: path).skill?
-		end.to raise_exception(subject::Invalid)
+	end
+	
+	it "defaults absent or null metadata to an empty mapping" do
+		["", "---\nmetadata: null\n---\n"].each do |content|
+			expect(subject.parse(content, path).metadata).to be == {}
+		end
+	end
+	
+	it "recognizes skills and treats other metadata types as ordinary context" do
+		[["skill", true], ["guide", false], [nil, false], [false, false]].each do |type, skill|
+			content = {"metadata" => {"type" => type}}.to_yaml + "---\n"
+			expect(subject.parse(content, path).skill?).to be == skill
+		end
 	end
 	
 end

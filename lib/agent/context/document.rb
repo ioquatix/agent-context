@@ -17,11 +17,11 @@ module Agent
 			
 			# Read and parse a Markdown document.
 			def self.load(path)
-				parse(File.read(path), path: path)
+				parse(File.read(path), path)
 			end
 			
 			# Parse YAML front matter using Markdown's native syntax tree.
-			def self.parse(content, path:)
+			def self.parse(content, path)
 				# Let Markly identify the front matter and its source boundary:
 				first = Markly.parse(content, flags: Markly::FRONT_MATTER).first_child
 				node = first if first&.type == :front_matter
@@ -29,7 +29,7 @@ module Agent
 				
 				# Interpret YAML metadata, keeping other formats opaque:
 				frontmatter = {}
-				if node && [nil, "yaml", "yml"].include?(language)
+				if node && [nil, "yaml"].include?(language)
 					frontmatter = YAML.safe_load(node.string_content, permitted_classes: [Date, Time], aliases: false, fallback: {})
 					raise Invalid, "Context frontmatter must be a mapping: #{path}" unless frontmatter.is_a?(Hash)
 				end
@@ -58,18 +58,12 @@ module Agent
 			
 			# The extensible metadata mapping within front matter.
 			def metadata
-				value = @frontmatter["metadata"]
-				value.is_a?(Hash) ? value : {}
+				@frontmatter["metadata"] || {}
 			end
 			
-			# Classify documents from their context metadata.
+			# Whether the document declares a skill.
 			def skill?
-				type = metadata["type"]
-				unless type.nil? || type == "skill"
-					raise Invalid, "Unsupported context type in #{@path}: #{type.inspect}"
-				end
-				
-				type == "skill"
+				metadata["type"] == "skill"
 			end
 			
 			# The original body following the parser's front matter boundary.

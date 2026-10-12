@@ -27,7 +27,7 @@ Ruby uses the gem name as its package selector. Rust uses the crate name when un
 
 `Document.load(path)` and `ContextDocument::load(path)` read the source and delegate to `parse`. The parsed value retains the source path, original Markdown, decoded YAML mapping, and the Markdown parser's front matter node or source boundary.
 
-Both implementations use their Markdown parser's front matter node to read and serialize front matter: Markly in Ruby and `socketry-markdown` in Rust. The document layer decodes and encodes YAML through the node's raw value and classifies context using the nested `metadata.type` field. An absent or null type denotes ordinary context; `skill` declares a skill; other values produce an unsupported-type error. Ordinary guides can carry their own top-level fields. Other front matter languages remain opaque.
+Both implementations use their Markdown parser's front matter node to read and serialize front matter: Markly in Ruby and `socketry-markdown` in Rust. The document layer decodes and encodes YAML through the node's raw value and classifies context using the nested `metadata.type` field. The skill predicate matches `skill`; all other values follow the ordinary context path. Ordinary guides can carry their own top-level fields. Front matter uses YAML by default or with the explicit `yaml` language hint. Other front matter languages remain opaque.
 
 A skill definition validates its top-level name and description. It preserves an authored name and uses it for the installed directory. When the name is omitted, it derives `<package>-<filename>`. Resource directories follow the source filename. Description validation trims whitespace to measure the value; the authored value is retained.
 

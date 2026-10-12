@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Install unfamiliar context types as ordinary guidance so providers can introduce new types.
 - Store resolved skill provenance in `SKILL.md` front matter under `metadata`, with `metadata.type: skill` declaring skills.
 - Preserve authored names, descriptions, additional metadata, and the original Markdown body using native front matter AST nodes.
 - Share loaded documents between context and skill installation, and use direct writes with rerunnable progress.
