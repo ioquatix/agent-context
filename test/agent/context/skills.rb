@@ -134,4 +134,21 @@ describe Agent::Context::Installer do
 		installer.install_gem_context("provider")
 		expect(File.read(destination)).to be == "# Updated\n"
 	end
+	
+	it "reports ambiguous resolved versions before installing a named provider" do
+		other = specification.dup
+		other.version = "2.0.0"
+		installer = subject.new(root: consumer, specifications: [specification, other])
+		expect{installer.install(gem: "provider")}.to raise_exception(Agent::Context::Skills::Installer::Conflict)
+		expect(File).not.to be(:exist?, File.join(consumer, ".agents"))
+	end
+	
+	it "requires a regular context directory before loading a provider" do
+		context = File.join(provider, "context")
+		FileUtils.rm_r(context)
+		File.write(context, "Provider configuration")
+		expect{installer.install}.to raise_exception(Agent::Context::Skills::Installer::InvalidSkill)
+		expect(File).not.to be(:exist?, File.join(consumer, ".agents"))
+	end
+	
 end
