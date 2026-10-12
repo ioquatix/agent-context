@@ -4,44 +4,42 @@
 # Copyright, 2026, by Samuel Williams.
 
 require "fileutils"
+require_relative "definition"
 require_relative "document"
 require_relative "skills/definition"
+require_relative "skills/errors"
 
 module Agent
 	module Context
-		# Represents a resolved gem and its loaded context documents and skills.
+		# Represents a resolved gem and its loaded context definitions.
 		class Package
 			# Load and classify a gem's context, keeping skill resources opaque.
 			def self.load(specification)
-				package = new(specification, {}, [])
+				package = new(specification, [])
 				root = package.path
 				return package unless File.exist?(root) || File.symlink?(root)
 				
 				unless File.lstat(root).directory?
-					raise Skills::Installer::InvalidSkill, "Context provider must be a regular directory: #{root}"
+					raise Skills::Invalid, "Context provider must be a regular directory: #{root}"
 				end
 				
 				package.load_directory(root)
 				package
 			rescue Document::Invalid => error
-				raise Skills::Installer::InvalidSkill, error.message
+				raise Skills::Invalid, error.message
 			end
 			
-			# Retain the provider and its classified files.
-			def initialize(specification, files, skills)
+			# Retain the provider and its loaded definitions.
+			def initialize(specification, definitions)
 				@specification = specification
-				@files = files
-				@skills = skills
+				@definitions = definitions
 			end
 			
 			# @attribute [Gem::Specification] The resolved provider.
 			attr_reader :specification
 			
-			# @attribute [Hash(String, Document | Nil)] Ordinary files and loaded Markdown.
-			attr_reader :files
-			
-			# @attribute [Array(Skills::Definition)] Prepared skill definitions.
-			attr_reader :skills
+			# @attribute [Array(Definition)] All loaded context definitions.
+			attr_reader :definitions
 			
 			# @returns [String] The provider gem name.
 			def name
@@ -61,7 +59,7 @@ module Agent
 					summary: @specification.summary,
 					metadata: @specification.metadata,
 					path: path,
-					skills: @skills,
+					definitions: @definitions,
 				}
 			end
 			
@@ -77,35 +75,33 @@ module Agent
 					elsif stat.file?
 						document = File.extname(file).downcase == ".md" ? Document.load(file) : nil
 						if document&.skill?
-							raise Skills::Installer::InvalidSkill, "Skill documents must be directly inside context/: #{file}" unless directory == path
-							@skills << Skills::Definition.from_document(document, @specification)
+							raise Skills::Invalid, "Skill documents must be directly inside context/: #{file}" unless directory == path
+							@definitions << Skills::Definition.from_document(document, @specification)
 						else
-							@files[file] = document
+							@definitions << Definition.new(path: file, document: document)
 						end
 					end
 				end
 				
 				# Companion resources belong to the skill and are copied as opaque files:
-				resources = @skills.map(&:path)
+				resources = @definitions.grep(Skills::Definition).map(&:resources)
 				directories.each do |directory|
 					load_directory(directory) unless resources.include?(directory)
 				end
-				@skills.sort_by!(&:name)
+				@definitions.sort_by! do |definition|
+					[definition.skill? ? 1 : 0, definition.path]
+				end
 			end
 			
 			# Refresh ordinary context from the loaded documents and opaque resources.
 			def install(destination)
+				files = @definitions.reject(&:skill?)
 				FileUtils.rm_rf(destination)
-				return false if @files.empty?
+				return false if files.empty?
 				
-				@files.each do |source, document|
-					target = File.join(destination, source.delete_prefix("#{path}/"))
-					FileUtils.mkdir_p(File.dirname(target))
-					if document
-						document.write(target)
-					else
-						FileUtils.copy_file(source, target, true)
-					end
+				files.each do |definition|
+					target = File.join(destination, definition.path.delete_prefix("#{path}/"))
+					definition.write_to(target)
 				end
 				true
 			end

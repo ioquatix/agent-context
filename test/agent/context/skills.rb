@@ -38,26 +38,20 @@ describe Agent::Context::Installer do
 			yielder << specification
 		end
 		installer = subject.new(root: consumer, specifications: specifications)
-		skills = Agent::Context::Skills::Installer.new(root: consumer, specifications: specifications)
 		expect(enumerations).to be == 0
 		expect(installer.find_gems_with_context.map{|gem| gem[:name]}).to be == ["provider"]
-		expect(skills.find_gems_with_skills.map{|gem| gem[:name]}).to be == ["provider"]
 		installer.install
 		expect(File.read(File.join(consumer, ".agents/context/provider/guide.md"))).to be == File.read(File.join(provider, "context/guide.md"))
 	end
 	
-	it "installs context and skills without duplicating skill documents or assets" do
-		agents = File.join(consumer, "agents.md")
-		File.write(agents, "Repository-owned instructions")
+	it "installs context and skills to their distinct destinations" do
 		result = installer.install
 		expect(result).to be == {context: ["provider"], skills: ["provider-workflow"]}
-		expect(File.read(agents)).to be == "Repository-owned instructions"
 		expect(File).to be(:exist?, File.join(consumer, ".agents/context/provider/guide.md"))
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents/context/provider/workflow.md"))
 		skill_root = File.join(consumer, ".agents/skills/provider-workflow")
 		expect(File.read(File.join(skill_root, "SKILL.md"))).to be(:include?, "license: MIT")
 		expect(File).to be(:exist?, File.join(skill_root, "references/checklist.md"))
-		expect(File).not.to be(:exist?, File.join(consumer, ".agents/context/index.md"))
 	end
 	
 	it "copies ordinary document metadata without interpreting descriptions" do
@@ -79,12 +73,12 @@ describe Agent::Context::Installer do
 		expect(File.read(File.join(consumer, path))).to be == File.read(File.join(provider, "context/guide.md"))
 		_, status = Open3.capture2e("git", "check-ignore", "--quiet", path, chdir: consumer)
 		expect(status.success?).to be == true
-		expect(File).not.to be(:exist?, File.join(consumer, ".agents/context/index.md"))
 	end
 	
-	it "excludes skill instructions and resources from listing and showing context" do
-		expect(installer.list_context_files("provider").map{|path| File.basename(path)}).to be == ["guide.md"]
-		expect(installer.show_context_file("provider", "workflow")).to be_nil
+	it "lists and shows skills alongside ordinary context" do
+		definitions = installer.list_context_definitions("provider")
+		expect(definitions.map{|definition| definition.display_name(File.join(provider, "context"))}).to be == ["guide.md", "workflow (skill)"]
+		expect(installer.show_context_file("provider", "workflow")).to be(:include?, "name: provider-workflow")
 		expect(installer.show_context_file("provider", "workflow/references/checklist.md")).to be_nil
 		expect do
 			installer.show_context_file("provider", "../secret")
@@ -95,7 +89,7 @@ describe Agent::Context::Installer do
 		File.write(File.join(provider, "context/guide.md"), "---\ndescription: [broken\n---\n\n# Guide")
 		expect do
 			installer.install
-		end.to raise_exception(Agent::Context::Skills::Installer::InvalidSkill)
+		end.to raise_exception(Agent::Context::Skills::Invalid)
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents/skills/provider-workflow"))
 	end
 	
@@ -129,9 +123,9 @@ describe Agent::Context::Installer do
 		mock(File).before(:write) do |path, *|
 			raise Errno::EACCES, "Injected context failure" if path == destination
 		end
-		expect{installer.install_gem_context("provider")}.to raise_exception(Errno::EACCES)
+		expect{installer.install(gem: "provider")}.to raise_exception(Errno::EACCES)
 		mock(File).clear
-		installer.install_gem_context("provider")
+		installer.install(gem: "provider")
 		expect(File.read(destination)).to be == "# Updated\n"
 	end
 	
@@ -139,7 +133,7 @@ describe Agent::Context::Installer do
 		other = specification.dup
 		other.version = "2.0.0"
 		installer = subject.new(root: consumer, specifications: [specification, other])
-		expect{installer.install(gem: "provider")}.to raise_exception(Agent::Context::Skills::Installer::Conflict)
+		expect{installer.install(gem: "provider")}.to raise_exception(Agent::Context::Skills::Conflict)
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents"))
 	end
 	
@@ -147,7 +141,7 @@ describe Agent::Context::Installer do
 		context = File.join(provider, "context")
 		FileUtils.rm_r(context)
 		File.write(context, "Provider configuration")
-		expect{installer.install}.to raise_exception(Agent::Context::Skills::Installer::InvalidSkill)
+		expect{installer.install}.to raise_exception(Agent::Context::Skills::Invalid)
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents"))
 	end
 	

@@ -62,13 +62,11 @@ describe Agent::Context::Installer do
 			expect(gem_info).to be_nil
 		end
 		
-		it "can list context files for a gem" do
+		it "can list context definitions for a gem" do
 			helper = subject.new(specifications: @specifications)
-			files = helper.list_context_files("fake-gem")
+			definitions = helper.list_context_definitions("fake-gem")
 			
-			expect(files.length).to be == 2
-			expect(files).to be(:include?, File.join(context_path, "getting-started.md"))
-			expect(files).to be(:include?, File.join(context_path, "configuration.md"))
+			expect(definitions.map{|definition| File.basename(definition.path)}).to be == ["configuration.md", "getting-started.md"]
 		end
 		
 		it "can show content of a specific context file" do
@@ -104,8 +102,8 @@ describe Agent::Context::Installer do
 			it "can install context from a specific gem" do
 				helper = subject.new(root: @target_path, specifications: @specifications)
 				
-				result = helper.install_gem_context("fake-gem")
-				expect(result).to be_truthy
+				result = helper.install(gem: "fake-gem")
+				expect(result[:context]).to be(:include?, "fake-gem")
 				
 				target_context_path = File.join(@target_path, ".agents", "context", "fake-gem")
 				expect(helper.context_path).to be == File.join(@target_path, ".agents", "context")
@@ -119,10 +117,9 @@ describe Agent::Context::Installer do
 				expect(content).to be == "# Getting Started\n\nThis is a test."
 			end
 			
-			it "returns false for gems without context" do
+			it "reports a missing gem" do
 				helper = subject.new(specifications: @specifications)
-				result = helper.install_gem_context("non-existent-gem")
-				expect(result).to be_falsey
+				expect{helper.install(gem: "non-existent-gem")}.to raise_exception(Agent::Context::Skills::Error)
 			end
 			
 			it "installs dotfiles and files inside hidden context directories" do
@@ -140,8 +137,8 @@ describe Agent::Context::Installer do
 			it "can install context from all gems" do
 				helper = subject.new(root: @target_path, specifications: @specifications)
 				
-				installed = helper.install_all_context
-				expect(installed).to be(:include?, "fake-gem")
+				installed = helper.install
+				expect(installed[:context]).to be(:include?, "fake-gem")
 				
 				# Check that files were copied
 				target_context_path = File.join(@target_path, ".agents", "context", "fake-gem")

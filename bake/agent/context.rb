@@ -16,16 +16,15 @@ end
 
 attr :installer
 
-# List all gems that have context available.
-# @parameter gem [String] Optional specific gem name to list context files for.
+# List providers and their context definitions, including skills.
+# @parameter gem [String | Nil] An optional provider gem.
 def list(gem: nil)
 	if gem
-		files = @installer.list_context_files(gem)
-		if files
+		provider = @installer.find_gem_with_context(gem)
+		if provider
 			puts "Context files for gem '#{gem}':"
-			files.each do |file|
-				relative_path = Pathname.new(file).relative_path_from(Pathname.new(@installer.find_gem_with_context(gem)[:path]))
-				puts "  #{relative_path}"
+			provider[:definitions].each do |definition|
+				puts "  #{definition.display_name(provider[:path])}"
 			end
 		else
 			puts "No context found for gem '#{gem}'"
@@ -43,9 +42,9 @@ def list(gem: nil)
 	end
 end
 
-# Show the content of a specific context file.
+# Show one context definition from a provider.
 # @parameter gem [String] The gem name.
-# @parameter file [String] The context file name.
+# @parameter file [String] The source filename or skill name.
 def show(gem:, file:)
 	content = @installer.show_context_file(gem, file)
 	if content

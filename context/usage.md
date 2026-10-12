@@ -32,13 +32,13 @@ Ordinary context is copied to `.agents/context/GEM/`. Repository instructions ca
 Skills contain procedures for particular tasks and are installed under `.agents/skills/`. Use the matching skill's instructions and resources when its description applies to the work.
 
 ```bash
-bundle exec bake agent:context:skill:list
-bundle exec bake agent:context:skill:show --gem agent-context --skill agent-context-usage
-bundle exec bake agent:context:skill:install
-bundle exec bake agent:context:skill:install --gem agent-context --skill agent-context-usage
+bundle exec bake agent:context:list --gem agent-context
+bundle exec bake agent:context:show --gem agent-context --file usage
+bundle exec bake agent:context:install
+bundle exec bake agent:context:install --gem agent-context
 ```
 
-An authored skill name determines its installed directory; a missing name defaults to `<gem>-<filename>`. `skill:install` refreshes all dependency skills by default; `--gem NAME` selects one provider and `--skill NAME` selects one installed skill name. This document installs as `agent-context-usage/SKILL.md`.
+The context list marks skill documents with `(skill)`. Show them by their source filename, and install them together with ordinary context. An authored skill name determines its installed directory; a missing name defaults to `<gem>-<filename>`. This document installs as `agent-context-usage/SKILL.md`.
 
 ## Keep Sources and Installed Files Separate
 

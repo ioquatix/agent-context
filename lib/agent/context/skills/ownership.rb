@@ -5,6 +5,7 @@
 # Copyright, 2026, by Samuel Williams.
 
 require_relative "../document"
+require_relative "errors"
 
 module Agent
 	module Context
@@ -15,7 +16,7 @@ module Agent
 				NAME_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
 				
 				# Raised when installed ownership cannot be safely interpreted.
-				class Invalid < StandardError
+				class Invalid < Agent::Context::Skills::Invalid
 				end
 				
 				# Read a skill's installation ownership.

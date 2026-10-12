@@ -5,13 +5,15 @@
 # Copyright, 2026, by Samuel Williams.
 
 require "fileutils"
+require_relative "../definition"
+require_relative "errors"
 require_relative "ownership"
 
 module Agent
 	module Context
 		module Skills
 			# Represents a dependency skill declared by a context document and its resources.
-			class Definition
+			class Definition < Agent::Context::Definition
 				# Build instructions from a parsed skill document and its provider.
 				def self.from_document(source, specification)
 					# Preserve authored names and derive missing names from the provider and file:
@@ -32,7 +34,7 @@ module Agent
 					assets = File.join(File.dirname(file), local_name)
 					if File.exist?(assets) || File.symlink?(assets)
 						unless File.lstat(assets).directory?
-							raise Installer::InvalidSkill, "Skill resources must be a regular directory: #{assets}"
+							raise Invalid, "Skill resources must be a regular directory: #{assets}"
 						end
 					else
 						assets = nil
@@ -43,7 +45,7 @@ module Agent
 					new(
 						name: installed_name,
 						description: frontmatter["description"],
-						path: assets,
+						resources: assets,
 						source_file: file,
 						document: document,
 						provider_name: specification.name,
@@ -54,7 +56,7 @@ module Agent
 				# Validate an installed directory name.
 				def self.validate_name(name, file)
 					unless name.is_a?(String) && name.match?(Ownership::NAME_PATTERN) && name.length <= 64
-						raise Installer::InvalidSkill, "Invalid skill name in #{file}: #{name.inspect}"
+						raise Invalid, "Invalid skill name in #{file}: #{name.inspect}"
 					end
 				end
 				
@@ -64,35 +66,36 @@ module Agent
 					
 					description = frontmatter["description"]
 					unless description.is_a?(String)
-						raise Installer::InvalidSkill, "Invalid skill description in #{file}"
+						raise Invalid, "Invalid skill description in #{file}"
 					end
 					
 					description = description.strip
 					if description.empty? || description.length > 1024
-						raise Installer::InvalidSkill, "Invalid skill description in #{file}"
+						raise Invalid, "Invalid skill description in #{file}"
 					end
 				end
 				
 				# Initialize a skill from a context document.
 				# @parameter name [String] The installed skill name.
 				# @parameter description [String] When to use the skill.
-				# @parameter path [String | Nil] The companion resource directory.
+				# @parameter resources [String | Nil] The companion resource directory.
 				# @parameter provider_name [String] The provider gem.
 				# @parameter provider_version [String] The provider version.
 				# @parameter source_file [String] The source context document.
 				# @parameter document [String] Generated skill instructions.
 				def initialize(
-					name:, description:, path:,
+					name:, description:, resources:,
 					provider_name:, provider_version:,
 					source_file:, document:
 				)
+					super(path: source_file)
 					@name = name
 					@description = description
-					@path = path
+					@resources = resources
 					@provider_name = provider_name
 					@provider_version = provider_version
 					@source_file = source_file
-					@document = document
+					@content = document
 				end
 				
 				# @attribute [String] The installed skill name.
@@ -102,7 +105,7 @@ module Agent
 				attr_reader :description
 				
 				# @attribute [String | Nil] The companion resource directory.
-				attr_reader :path
+				attr_reader :resources
 				
 				# @attribute [String] The provider gem.
 				attr_reader :provider_name
@@ -115,7 +118,15 @@ module Agent
 				
 				# @returns [String] The installed skill instructions.
 				def content
-					@document
+					@content
+				end
+				
+				def skill?
+					true
+				end
+				
+				def display_name(_context_path)
+					"#{File.basename(@source_file, File.extname(@source_file))} (skill)"
 				end
 				
 				# Write instructions before resources so ownership is available during refresh.
@@ -123,12 +134,12 @@ module Agent
 				def write_to(destination)
 					FileUtils.mkdir_p(destination)
 					begin
-						File.write(File.join(destination, "SKILL.md"), @document)
+						File.write(File.join(destination, "SKILL.md"), @content)
 					rescue
 						FileUtils.rm_rf(destination)
 						raise
 					end
-					copy_resources(@path, destination, true) if @path
+					copy_resources(@resources, destination, true) if @resources
 				end
 				
 				private
@@ -140,11 +151,11 @@ module Agent
 						metadata = File.lstat(from)
 						
 						if metadata.symlink? || (!metadata.file? && !metadata.directory?)
-							raise Installer::InvalidSkill, "Skill resources must be regular files or directories: #{from}"
+							raise Invalid, "Skill resources must be regular files or directories: #{from}"
 						end
 						
 						if top_level && name.downcase == "skill.md"
-							raise Installer::InvalidSkill, "#{name} is reserved for generated skill files: #{from}"
+							raise Invalid, "#{name} is reserved for generated skill files: #{from}"
 						end
 						
 						if metadata.directory?

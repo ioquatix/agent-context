@@ -38,10 +38,10 @@ bake agent:context:list --gem async
 # View a specific context file
 bake agent:context:show --gem async --file thread-safety
 
-# List, show, or install dependency skills
-bake agent:context:skill:list
-bake agent:context:skill:show --gem provider --skill provider-workflow
-bake agent:context:skill:install --gem provider --skill provider-workflow
+# List, show, or install a skill through the context tasks
+bake agent:context:list --gem provider
+bake agent:context:show --gem provider --file workflow
+bake agent:context:install --gem provider
 ```
 
 ## Understanding context/ vs .agents/context/

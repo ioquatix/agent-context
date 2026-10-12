@@ -86,18 +86,7 @@ Show the content of a specific context file:
 $ bake agent:context:show --gem async --file thread-safety
 ```
 
-#### Skills
-
-List, show, or install metadata-declared dependency skills:
-
-``` bash
-$ bake agent:context:skill:list
-$ bake agent:context:skill:show --gem provider --skill provider-workflow
-$ bake agent:context:skill:install
-$ bake agent:context:skill:install --gem provider --skill provider-workflow
-```
-
-`agent-context` includes skill discovery and installation directly. Use it for Ruby dependency skills; the standalone `agent-skills` gem is deprecated.
+The context list marks skill documents with `(skill)`, and the show and install tasks handle them alongside ordinary context. `agent-context` includes skill discovery and installation directly. Use it for Ruby dependency skills; the standalone `agent-skills` gem is deprecated.
 
 ## Version Control
 

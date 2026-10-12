@@ -10,9 +10,10 @@ Choose the simplest structure that makes the behavior, state, and responsibiliti
 | --- | --- | --- |
 | Resolved provider | `Gem::Specification`, retained by `Package` | `ContextPackage`, resolved by `Installer::discover` |
 | Parsed Markdown | `Document` | `ContextDocument` in `document.rs` |
-| Loaded provider context | `Package` | `PackageContext` |
-| Skill definition | `Skills::Definition` | `Skill` |
-| Installation workflow | `Installer#install`, `Skills::Installer` | `Installer::install`, skill installation functions |
+| Loaded provider definitions | `Package#definitions` | `PackageContext::definitions` |
+| Ordinary definition | `Definition` | `Definition::File` |
+| Skill definition | `Skills::Definition < Definition` | `Definition::Skill` |
+| Installation workflow | `Installer#install` | `Installer::install` |
 | Installed provenance | `Skills::Ownership` | `ownership` module |
 | Local Git exclusions | `Exclusion` | `exclude` module |
 | Command presentation | Bake task adapters | Bake task adapters |
@@ -39,17 +40,15 @@ The portable YAML form uses `---` delimiters. Rust also recognizes the additiona
 
 For each provider, load Markdown documents before descending into subdirectories. Root-level skill declarations identify companion resource directories. Keep those resources opaque, including Markdown-looking assets.
 
-The loaded package stores ordinary Markdown documents, opaque resource paths, and prepared skill definitions. Listing, showing, and installation use this classification. The main installation operation resolves providers and loads each provider once, then passes the resulting values to context and skill installation. Ordinary Markdown is written from the loaded source; opaque files are copied directly.
+The loaded package stores ordinary definitions and skill definitions in one collection. Listing, showing, and installation use this classification. The main installation operation resolves providers and loads each provider once, then applies the ordinary or skill destination rules to each definition. Ordinary Markdown is written from the loaded source; opaque files are copied directly.
 
 ## Installation Flow
 
 The library owns orchestration. Bake tasks translate arguments, call the library, and present installed provider and skill names.
 
-1. Resolve the selected providers and load their documents.
-2. Validate selected skill names, read installed provenance, and check destination ownership.
-3. Refresh selected skill directories, writing `SKILL.md` before their resources.
-4. Remove stale skills within the selected ownership scope and refresh the project's Git exclusions.
-5. Refresh ordinary context from the loaded documents and opaque resources.
+1. Resolve the selected providers and load their definitions.
+2. Validate and install skills under `.agents/skills/`, reconcile stale entries within the selected scope, and refresh Git exclusions.
+3. Install ordinary definitions under `.agents/context/`.
 
 Generated files use direct `File.write` or `std::fs::write`. Completed steps remain in place if a later operation fails. Report the relevant path and let the caller resolve the failure and rerun. Cleanup around a failed instruction write removes the incomplete destination; a later resource-copy failure retains the completed instructions and their provenance.
 
@@ -59,7 +58,7 @@ Loading and writing are separate operations over a loaded snapshot. `Document.lo
 
 Installed `SKILL.md` metadata carries the resolved ecosystem, package, and version. Scanning direct skill directories supplies the names used for reconciliation and local Git exclusions. Ownership recognition requires `metadata.type: skill` and an explicit ecosystem before validating the complete tuple. Project skills can use unrelated metadata such as a version without claiming installation ownership.
 
-A full refresh selects one ecosystem; a package refresh selects one ecosystem and package; an individual skill install selects one name. Destination collisions are reported. Other owned scopes and project skills remain available.
+A full refresh selects one ecosystem; a package refresh selects one ecosystem and package. Destination collisions are reported. Other owned scopes and project skills remain available.
 
 Git exclusion handling locates and reads the local exclusion file, replaces the consuming project's marked block, and writes the result directly. Prefixes distinguish nested projects sharing a repository. The block lists generated context and exact installed skill directories from all ecosystems.
 

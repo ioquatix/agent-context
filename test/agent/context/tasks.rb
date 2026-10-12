@@ -7,19 +7,16 @@ require "bake"
 require "tmpdir"
 
 describe "Agent Context tasks" do
-	it "exposes context and skill tasks without the old command namespace" do
+	it "exposes the context task family" do
 		Dir.mktmpdir do |root|
 			context = Bake::Context.load(root)
-			%w[agent:context:list agent:context:show agent:context:install agent:context:skill:list agent:context:skill:show agent:context:skill:install].each do |name|
+			%w[agent:context:list agent:context:show agent:context:install].each do |name|
 				expect(context.lookup(name)).to be_truthy
 			end
-			expect(context.lookup("agent:context:index")).to be_nil
-			expect(context.lookup("agent:context:agents_md")).to be_nil
-			expect(context.lookup("agent:skills:install")).to be_nil
 		end
 	end
 	
-	it "runs context and skill tasks against a resolved provider" do
+	it "lists, shows, and installs context and skills together" do
 		Dir.mktmpdir do |root|
 			provider = File.join(root, "provider")
 			FileUtils.mkdir_p(File.join(provider, "context"))
@@ -39,30 +36,19 @@ describe "Agent Context tasks" do
 			context.call("agent:context:list", "--gem", "provider")
 			context.call("agent:context:list", "--gem", "missing")
 			context.call("agent:context:show", "--gem", "provider", "--file", "guide")
+			context.call("agent:context:show", "--gem", "provider", "--file", "workflow")
 			context.call("agent:context:show", "--gem", "provider", "--file", "missing")
-			context.call("agent:context:skill:list")
-			context.call("agent:context:skill:list", "--gem", "provider")
-			context.call("agent:context:skill:show", "--gem", "provider", "--skill", "provider-workflow")
-			expect do
-				context.call("agent:context:skill:show", "--gem", "provider", "--skill", "missing")
-			end.to raise_exception(ArgumentError)
-			context.call("agent:context:skill:install", "--gem", "provider", "--skill", "provider-workflow")
 			context.call("agent:context:install", "--gem", "provider")
 			expect(output.join("\n")).to be(:include?, "Provider Guide")
-			expect(output.join("\n")).to be(:include?, "provider-workflow (provider@1.0.0)")
+			expect(output.join("\n")).to be(:include?, "workflow (skill)")
+			expect(output.join("\n")).to be(:include?, "name: provider-workflow")
 			expect(output.join("\n")).to be(:include?, "Installed skills: provider-workflow")
-			expect(File).not.to be(:exist?, File.join(root, ".agents/context/index.md"))
 			expect(File).to be(:exist?, File.join(root, ".agents/context/provider/guide.md"))
-			expect(File).not.to be(:exist?, File.join(root, "agents.md"))
 			expect(File).to be(:exist?, File.join(root, ".agents/skills/provider-workflow/SKILL.md"))
 			FileUtils.rm_rf(File.join(provider, "context"))
 			context.call("agent:context:list")
-			context.call("agent:context:skill:list")
-			context.call("agent:context:skill:install")
 			context.call("agent:context:install")
 			expect(output).to be(:include?, "No gems with context found")
-			expect(output).to be(:include?, "No dependency skills found")
-			expect(output).to be(:include?, "No dependency skills were installed")
 			expect(File).not.to be(:exist?, File.join(root, ".agents/skills/provider-workflow"))
 		end
 	end

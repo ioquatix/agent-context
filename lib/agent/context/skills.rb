@@ -5,11 +5,11 @@
 
 require_relative "skills/definition"
 require_relative "skills/ownership"
-require_relative "skills/installer"
+require_relative "skills/errors"
 
 module Agent
 	module Context
-		# Tools for discovering and installing dependency skills from Ruby gems.
+		# Skill definitions and installation ownership for dependency context.
 		module Skills
 		end
 	end

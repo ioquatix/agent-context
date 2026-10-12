@@ -210,13 +210,11 @@ Skill documents and their resources are excluded from ordinary context copying e
 
 ## 6. Discovering Installed Context
 
-Consumers SHOULD provide commands to list providers, list their context files, and show a selected file. Agents discover installed guidance by enumerating Markdown files under `.agents/context/<selector>/` and reading the files relevant to their task. A packaged usage skill SHOULD explain this workflow and how to install missing guidance.
+Consumers SHOULD provide commands to list providers, list their definitions, and show a selected definition. Agents discover installed guidance by enumerating Markdown files under `.agents/context/<selector>/` and reading the files relevant to their task. A packaged usage skill SHOULD explain this workflow and how to install missing guidance.
 
 Providers SHOULD use descriptive filenames, keep guides focused on one topic, and link related documents. Ordinary documents need no front matter. Unrelated ordinary-document metadata MUST be tolerated. Skill resource files are opaque assets and MUST NOT be parsed as context documents.
 
-The installed directory layout is the discovery interface. Consumers MUST NOT generate a context index or interpret `context/index.yaml` as indexing metadata. Provider-authored files are copied as ordinary resources according to section 5.
-
-Context installation MUST NOT create or modify the repository owner's `agents.md`. Repository owners can instruct agents to read relevant installed guidance under `.agents/context/`.
+The installed directory layout is the discovery interface.
 
 ## 7. Skill Installation Ownership
 
@@ -240,7 +238,7 @@ Consumers MUST discover ownership by scanning direct child directories of `.agen
 
 `metadata.type: skill` together with an explicit `metadata.ecosystem` identifies installation provenance. Consumers MUST validate the complete provenance tuple after recognizing that discriminator, and report malformed or unreadable metadata. Other directories are project-owned; an authored `metadata.version` alone is ordinary skill metadata.
 
-A full refresh reconciles the installer's ecosystem; a package refresh reconciles that ecosystem and package; installing one named skill retains other owned skills. Full reconciliation includes providers removed from the dependency graph and providers that become empty. Consumers MUST retain skills belonging to other ecosystems and packages outside the requested scope, and MUST reject conflicting destinations.
+A full refresh reconciles the installer's ecosystem; a package refresh reconciles that ecosystem and package. Full reconciliation includes providers removed from the dependency graph and providers that become empty. Consumers MUST retain skills belonging to other ecosystems and packages outside the requested scope, and MUST reject conflicting destinations.
 
 Installers SHOULD write `SKILL.md` before copying companion resources, establishing ownership for subsequent refreshes. If writing the instructions fails, installers SHOULD remove that incomplete destination. Resource-copy failures leave completed instructions in place. The incremental failure behavior in section 5.2 applies to skills and Git exclusion updates.
 
