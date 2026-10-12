@@ -15,7 +15,7 @@ AI agents and automated tools working with software projects often lack access t
 - **Standardization**: Define a consistent structure for contextual information across different programming languages and ecosystems.
 - **Discoverability**: Enable automated tools to programmatically find and access contextual information.
 - **Separation of Concerns**: Clearly separate provider context from consumer context.
-- **Extensibility**: Allow for future enhancements while maintaining backward compatibility.
+- **Extensibility**: Preserve additional provider-authored metadata alongside the fields defined by this specification.
 
 ## 2. Core Concepts
 
@@ -35,7 +35,7 @@ A **Context Consumer** is any project or tool that utilizes contextual informati
 - Install context from their dependencies into a `.agents/context/` directory.
 - May install skill-marked context documents into a `.agents/skills/` directory.
 - Use tools to discover and access available context.
-- Apply context based on file patterns and metadata.
+- Read and apply guidance relevant to the task.
 
 ### 2.3 Context Files
 
@@ -83,9 +83,11 @@ Context consumers SHOULD create a `.agents/context/` directory in their project 
 
 - **Location**: Must be at the project root (typically where package manifests are located).
 - **Purpose**: Contains context files copied from dependencies.
-- **Organization**: Must organize context by package name in subdirectories.
+- **Organization**: Must organize context by resolved provider in subdirectories named by a package selector.
 - **Exclusion**: The generated `.agents/context/` directory SHOULD be excluded from version control. A Git integration SHOULD add local exclusions to `.git/info/exclude` so projects do not need to commit rules for generated files. Other project-owned files may live directly under `.agents/`.
 - **Transient Nature**: Should contain only reproducible content that can be regenerated from installed packages and MUST NOT contain unique or modified files.
+
+A package selector identifies one resolved provider. It is normally the package name. Consumers that support multiple resolved versions MUST distinguish them, for example with `package-a@1.0.0` and `package-a@2.0.0`. Tools SHOULD display accepted selectors when listing providers and use those selectors consistently in commands and installed directory names.
 
 Example structure:
 
@@ -159,11 +161,13 @@ metadata:
 ---
 ```
 
+Within a context document's YAML `metadata` mapping, an absent or null `type` denotes ordinary context; the string `skill` declares a skill. Consumers MUST reject any other non-null `metadata.type` value and report it as an unsupported context type.
+
 An authored top-level `name` MUST be preserved and used as the installed directory name. When `name` is absent, consumers MUST derive it from the lowercase provider package name (normalizing underscores to hyphens), a hyphen, and the source filename without its `.md` extension. Installed names MUST use lowercase ASCII letters, digits, and single hyphens, contain 1–64 characters, and begin and end with a letter or digit. Descriptions MUST contain 1–1,024 characters after trimming whitespace for validation; consumers MUST retain the authored description value.
 
 Consumers MUST install the document as `.agents/skills/<name>/SKILL.md`. A companion directory named after the source filename without its extension MAY provide resources, independently of the installed name. Its files MUST be copied into the installed skill directory. Consumers MUST retain additional top-level fields and nested metadata, except for the resolved installation provenance defined in section 7. Skill documents and their resources belong exclusively to the installed skill.
 
-Consumers MUST use their Markdown parser's front matter node to read and serialize front matter. YAML decoding and encoding operate on that node's raw value. Consumers MUST preserve the original Markdown body after the parser's front matter boundary. Front matter formatting may be normalized during serialization.
+Consumers MUST preserve the original Markdown body bytes following the front matter. Front matter formatting MAY be normalized during serialization.
 
 Dependency-installed skill directories SHOULD be excluded from version control, while project-owned skills in `.agents/skills/` SHOULD remain trackable. Git integrations SHOULD add exact dependency-installed skill paths to `.git/info/exclude` rather than ignore the entire `.agents/skills/` directory. They SHOULD mark generated entries with comments and preserve user-authored rules outside that marked section.
 
@@ -188,31 +192,25 @@ The discovery process SHOULD integrate with the target language's package manage
 Context installation MUST follow these principles:
 
 1. **Copy Strategy**: Context files SHOULD be copied rather than symlinked.
-2. **Namespace Isolation**: Each package's ordinary context MUST be installed in its own subdirectory.
+2. **Namespace Isolation**: Each resolved provider's ordinary context MUST be installed in its own subdirectory, named by its package selector.
 3. **Preserve Structure**: The internal structure of ordinary context files MUST be preserved.
 4. **Skill Separation**: Skill documents and their resources MUST be installed as skills only, not duplicated as ordinary context.
 
 Consumers SHOULD validate document data as part of loading or parsing it and use that validated representation when applying changes. Installation MAY use direct file writes and copies. Consumers MUST report failures; completed changes and partially written output MAY remain after an error. After resolving the reported failure, consumers SHOULD support refreshing generated output by rerunning installation.
 
-### 5.3 Installation Algorithm
+### 5.3 Installation Steps
 
-```
-FOR each package with context:
-  FOR each file in package/context/:
-    IF file is a skill document or belongs to a skill resource directory:
-      IF the consumer supports skills:
-        INSTALL the document as .agents/skills/skill-name/SKILL.md
-        COPY its matching resource directory into that skill directory
-      ELSE:
-        SKIP it
-    ELSE:
-      COPY it into .agents/context/package-name/, preserving its relative path
-END
-```
+For each selected provider:
+
+1. Classify its context documents and identify companion skill resource directories, keeping their contents opaque.
+2. If skills are supported, install each declared skill once as `.agents/skills/<name>/SKILL.md` and copy its companion resources into that skill directory.
+3. Copy the remaining ordinary files into `.agents/context/<selector>/`, preserving their relative paths.
+
+Skill documents and their resources are excluded from ordinary context copying even when the consumer does not support skill installation.
 
 ## 6. Discovering Installed Context
 
-Consumers SHOULD provide commands to list providers, list their context files, and show a selected file. Agents discover installed guidance by enumerating Markdown files under `.agents/context/<package-name>/` and reading the files relevant to their task. A packaged usage skill SHOULD explain this workflow and how to install missing guidance.
+Consumers SHOULD provide commands to list providers, list their context files, and show a selected file. Agents discover installed guidance by enumerating Markdown files under `.agents/context/<selector>/` and reading the files relevant to their task. A packaged usage skill SHOULD explain this workflow and how to install missing guidance.
 
 Providers SHOULD use descriptive filenames, keep guides focused on one topic, and link related documents. Ordinary documents need no front matter. Unrelated ordinary-document metadata MUST be tolerated. Skill resource files are opaque assets and MUST NOT be parsed as context documents.
 

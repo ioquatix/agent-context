@@ -19,13 +19,15 @@ Choose the simplest structure that makes the behavior, state, and responsibiliti
 
 Each parser, metadata rule, and file format has one owner. Document parsing interprets Markdown and YAML; skill definitions apply name and description rules; ownership interprets installed provenance; installers select destinations and change files. Constructors retain supplied state. Reading, parsing, discovery, and installation have explicit entry points.
 
-Ruby keeps a gem specification with its loaded files. Rust separates the resolved `ContextPackage` from its loaded `PackageContext`. Cargo selectors can distinguish multiple resolved versions; Ruby operates on the supplied gem specifications. Those package-manager differences share the same document and installation rules.
+Ruby keeps a gem specification with its loaded files. Rust separates the resolved `ContextPackage` from its loaded `PackageContext`. Both apply the same document and installation rules.
+
+Ruby uses the gem name as its package selector. Rust uses the crate name when unique and `crate@version` when multiple versions provide context. These selectors identify providers in commands and installed context directories.
 
 ## Documents and Front Matter
 
 `Document.load(path)` and `ContextDocument::load(path)` read the source and delegate to `parse`. The parsed value retains the source path, original Markdown, decoded YAML mapping, and the Markdown parser's front matter node or source boundary.
 
-Markly and `socketry-markdown` identify front matter. The document layer decodes YAML from the node's raw value and classifies context using the nested `metadata.type` field. Ordinary guides can carry their own top-level fields. Other front matter languages remain opaque.
+Both implementations use their Markdown parser's front matter node to read and serialize front matter: Markly in Ruby and `socketry-markdown` in Rust. The document layer decodes and encodes YAML through the node's raw value and classifies context using the nested `metadata.type` field. An absent or null type denotes ordinary context; `skill` declares a skill; other values produce an unsupported-type error. Ordinary guides can carry their own top-level fields. Other front matter languages remain opaque.
 
 A skill definition validates its top-level name and description. It preserves an authored name and uses it for the installed directory. When the name is omitted, it derives `<package>-<filename>`. Resource directories follow the source filename. Description validation trims whitespace to measure the value; the authored value is retained.
 
