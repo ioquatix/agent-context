@@ -121,10 +121,15 @@ module Agent
 					@content
 				end
 				
+				# Whether this definition installs as an Agent Skill.
+				# @returns [bool] `true` for skill definitions.
 				def skill?
 					true
 				end
 				
+				# Return the filename shown by the context list with its skill marker.
+				# @parameter _context_path [String] The provider's context directory.
+				# @returns [String] The source filename and skill marker.
 				def display_name(_context_path)
 					"#{File.basename(@source_file, File.extname(@source_file))} (skill)"
 				end
