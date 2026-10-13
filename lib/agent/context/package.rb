@@ -43,7 +43,7 @@ module Agent
 			def name
 				@specification.name
 			end
-
+			
 			# @returns [String] The provider gem version.
 			def version
 				@specification.version.to_s
