@@ -8,11 +8,11 @@ Choose the simplest structure that makes the behavior, state, and responsibiliti
 
 | Concern | Ruby | Rust |
 | --- | --- | --- |
-| Resolved provider | `Gem::Specification`, retained by `Package` | `Provider`, resolved by `Installer::discover` |
+| Resolved package specification | `Gem::Specification`, retained by `Package` | `Specification`, resolved by `Installer::discover` |
 | Parsed Markdown | `Document` | `Document` in `document.rs` |
 | Loaded provider definitions | `Package#definitions` | `Package::definitions` |
 | Ordinary file | `Definition` | `FileDefinition` |
-| All definition variants | `Definition` and `Skills::Definition < Definition` | `Definition::File(FileDefinition)` or `Definition::Skill(Skill)` |
+| All definition variants | `Definition` and `Skills::Definition < Definition` | `Definition::File(FileDefinition)` or `Definition::Skill(SkillDefinition)` |
 | Installation workflow | `Installer#install` | `Installer::install` |
 | Installed provenance | `Skills::Ownership` | `ownership` module |
 | Local Git exclusions | `Exclusion` | `exclude` module |
@@ -21,7 +21,7 @@ Choose the simplest structure that makes the behavior, state, and responsibiliti
 
 Each parser, metadata rule, and file format has one owner. Document parsing interprets Markdown and YAML; skill definitions apply name and description rules; ownership interprets installed provenance; installers select destinations and change files. Constructors retain supplied state. Reading, parsing, discovery, and installation have explicit entry points.
 
-Ruby's loaded `Package` retains its gem specification and definitions. Rust's resolved `Provider` carries Cargo metadata and the context path; loaded `Package` wraps that provider with its definitions. Both apply the same document and installation rules.
+Ruby's loaded `Package` retains its `Gem::Specification` and definitions. Rust's resolved `Specification` carries Cargo metadata and the context path; loaded `Package` wraps that specification with its definitions. Both apply the same document and installation rules.
 
 Ruby uses the gem name as its package selector. Rust uses the crate name when unique and `crate@version` when multiple versions provide context. These selectors identify providers in commands and installed context directories.
 
@@ -41,7 +41,7 @@ The portable YAML form uses `---` delimiters. Rust also recognizes the additiona
 
 For each provider, load Markdown documents before descending into subdirectories. Root-level skill declarations identify companion resource directories. Keep those resources opaque, including Markdown-looking assets.
 
-The loaded package stores ordinary definitions and skills in one collection. Ruby uses `Definition` for ordinary files and `Skills::Definition < Definition` for skills. Rust represents the same alternatives with a `Definition` enum: `File(FileDefinition)` carries the provider-relative destination path, source path, and optional parsed `Document`; `Skill(Skill)` carries skill-specific metadata and resources. Both implementations use `Document` for parsed Markdown.
+The loaded package stores ordinary definitions and skills in one collection. Ruby uses `Definition` for ordinary files and `Skills::Definition < Definition` for skills. Rust represents the same alternatives with a `Definition` enum: `File(FileDefinition)` carries the provider-relative destination path, source path, and optional parsed `Document`; `Skill(SkillDefinition)` carries skill-specific metadata and resources. Both implementations use `Document` for parsed Markdown.
 
 Listing, showing, and installation use this classification. The main installation operation resolves providers and loads each provider once, then applies the ordinary or skill destination rules to each definition.
 
