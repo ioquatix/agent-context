@@ -9,10 +9,10 @@ Choose the simplest structure that makes the behavior, state, and responsibiliti
 | Concern | Ruby | Rust |
 | --- | --- | --- |
 | Resolved provider | `Gem::Specification`, retained by `Package` | `Provider`, resolved by `Installer::discover` |
-| Parsed Markdown | `Document` | `ContextDocument` in `document.rs` |
+| Parsed Markdown | `Document` | `Document` in `document.rs` |
 | Loaded provider definitions | `Package#definitions` | `Package::definitions` |
-| Ordinary definition | `Definition` | `Definition` |
-| All definition variants | `Definition` and `Skills::Definition < Definition` | `ContextDefinition::File(Definition)` or `ContextDefinition::Skill(Skill)` |
+| Ordinary file | `Definition` | `FileDefinition` |
+| All definition variants | `Definition` and `Skills::Definition < Definition` | `Definition::File(FileDefinition)` or `Definition::Skill(Skill)` |
 | Installation workflow | `Installer#install` | `Installer::install` |
 | Installed provenance | `Skills::Ownership` | `ownership` module |
 | Local Git exclusions | `Exclusion` | `exclude` module |
@@ -27,7 +27,7 @@ Ruby uses the gem name as its package selector. Rust uses the crate name when un
 
 ## Documents and Front Matter
 
-`Document.load(path)` and `ContextDocument::load(path)` read the source and delegate to `parse`. The parsed value retains the source path, original Markdown, decoded YAML mapping, and the Markdown parser's front matter node or source boundary.
+`Document.load(path)` and `Document::load(path)` read the source and delegate to `parse`. The parsed value retains the source path, original Markdown, decoded YAML mapping, and the Markdown parser's front matter node or source boundary.
 
 Both implementations use their Markdown parser's front matter node to read and serialize front matter: Markly in Ruby and `socketry-markdown` in Rust. The document layer decodes and encodes YAML through the node's raw value and classifies context using the nested `metadata.type` field. The skill predicate matches `skill`; all other values follow the ordinary context path. Ordinary guides can carry their own top-level fields. Front matter uses YAML by default or with the explicit `yaml` language hint. Other front matter languages remain opaque.
 
@@ -41,7 +41,7 @@ The portable YAML form uses `---` delimiters. Rust also recognizes the additiona
 
 For each provider, load Markdown documents before descending into subdirectories. Root-level skill declarations identify companion resource directories. Keep those resources opaque, including Markdown-looking assets.
 
-The loaded package stores ordinary definitions and skills in one collection. Rust's `Definition` is the ordinary-file payload, matching Ruby's ordinary `Definition`; it carries the provider-relative destination path, source path, and optional parsed `ContextDocument`. Rust's `ContextDefinition` enum holds either that file definition or a skill. `ContextDocument` corresponds to Ruby's `Document`.
+The loaded package stores ordinary definitions and skills in one collection. Ruby uses `Definition` for ordinary files and `Skills::Definition < Definition` for skills. Rust represents the same alternatives with a `Definition` enum: `File(FileDefinition)` carries the provider-relative destination path, source path, and optional parsed `Document`; `Skill(Skill)` carries skill-specific metadata and resources. Both implementations use `Document` for parsed Markdown.
 
 Listing, showing, and installation use this classification. The main installation operation resolves providers and loads each provider once, then applies the ordinary or skill destination rules to each definition.
 
