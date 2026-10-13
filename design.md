@@ -23,7 +23,7 @@ Each parser, metadata rule, and file format has one owner. Document parsing inte
 
 Ruby's loaded `Package` retains its `Gem::Specification` and definitions. Rust's resolved `Specification` carries Cargo metadata and the context path; loaded `Package` wraps that specification with its definitions. Both apply the same document and installation rules.
 
-Ruby uses the gem name as its package selector. Rust uses the crate name when unique and `crate@version` when multiple versions provide context. These selectors identify providers in commands and installed context directories.
+Ruby uses the gem name as its package selector. Rust uses the crate name when unique and `crate@version` when multiple versions provide context. These selectors identify providers in commands and installed context directories. Rust exposes the resolved values as `Installer::specifications()` and `Installer::find_specification()`; “provider” remains the domain role of a package that supplies context.
 
 ## Documents and Front Matter
 
