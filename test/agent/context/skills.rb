@@ -39,7 +39,7 @@ describe Agent::Context::Installer do
 		end
 		installer = subject.new(root: consumer, specifications: specifications)
 		expect(enumerations).to be == 0
-		expect(installer.find_gems_with_context.map{|gem| gem[:name]}).to be == ["provider"]
+		expect(installer.find_gems_with_context.map(&:name)).to be == ["provider"]
 		installer.install
 		expect(File.read(File.join(consumer, ".agents/context/provider/guide.md"))).to be == File.read(File.join(provider, "context/guide.md"))
 	end

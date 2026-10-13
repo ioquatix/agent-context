@@ -23,8 +23,8 @@ def list(gem: nil)
 		provider = @installer.find_gem_with_context(gem)
 		if provider
 			puts "Context files for gem '#{gem}':"
-			provider[:definitions].each do |definition|
-				puts "  #{definition.display_name(provider[:path])}"
+			provider.definitions.each do |definition|
+				puts "  #{definition.display_name(provider.path)}"
 			end
 		else
 			puts "No context found for gem '#{gem}'"
@@ -33,8 +33,8 @@ def list(gem: nil)
 		gems = @installer.find_gems_with_context
 		if gems.any?
 			puts "Gems with context available:"
-			gems.each do |gem_info|
-				puts "  #{gem_info[:name]} (#{gem_info[:version]})"
+			gems.each do |provider|
+				puts "  #{provider.name} (#{provider.version})"
 			end
 		else
 			puts "No gems with context found"

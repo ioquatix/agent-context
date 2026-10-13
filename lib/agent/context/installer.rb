@@ -31,13 +31,13 @@ module Agent
 			
 			# Find providers with ordinary context or skills.
 			def find_gems_with_context(skip_local: true)
-				packages(skip_local: skip_local).reject{|package| package.definitions.empty?}.map(&:information)
+				packages(skip_local: skip_local).reject{|package| package.definitions.empty?}
 			end
 			
 			# Find one provider with context or skills.
 			def find_gem_with_context(gem_name)
 				package = packages(gem: gem_name).first
-				package.information if package && !package.definitions.empty?
+				package if package && !package.definitions.empty?
 			end
 			
 			# List every definition from a provider, including skill documents.

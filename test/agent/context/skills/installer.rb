@@ -50,8 +50,8 @@ describe Agent::Context::Installer do
 		gems = installer.find_gems_with_context
 		
 		expect(gems.length).to be == 1
-		expect(gems.first[:name]).to be == "fake-gem"
-		expect(gems.first[:definitions].grep(Agent::Context::Skills::Definition).map(&:name)).to be == ["fake-gem-ruby-testing"]
+		expect(gems.first.name).to be == "fake-gem"
+		expect(gems.first.definitions.grep(Agent::Context::Skills::Definition).map(&:name)).to be == ["fake-gem-ruby-testing"]
 	end
 	
 	it "lists skills provided by a gem" do
@@ -93,7 +93,7 @@ describe Agent::Context::Installer do
 		local_installer = subject.new(root: consumer_root, specifications: [local_specification])
 		
 		expect(local_installer.find_gems_with_context).to be == []
-		expect(local_installer.find_gems_with_context(skip_local: false).map{|gem| gem[:name]}).to be == ["local-gem"]
+		expect(local_installer.find_gems_with_context(skip_local: false).map(&:name)).to be == ["local-gem"]
 	end
 	
 	with "installation" do
@@ -196,7 +196,7 @@ describe Agent::Context::Installer do
 		it "lists unmarked documents as ordinary context" do
 			File.write(File.join(provider_root, "context/ruby-testing.md"), "# Plain guidance\n")
 			expect(skill_definitions("fake-gem")).to be == []
-			expect(installer.find_gems_with_context.map{|gem| gem[:name]}).to be == ["fake-gem"]
+			expect(installer.find_gems_with_context.map(&:name)).to be == ["fake-gem"]
 		end
 		
 		it "installs skills alongside unfamiliar context types" do

@@ -42,24 +42,26 @@ describe Agent::Context::Installer do
 			gems = helper.find_gems_with_context
 			
 			expect(gems.length).to be == 1
-			expect(gems.first[:name]).to be == "fake-gem"
-			expect(gems.first[:version]).to be == "1.0.0"
-			expect(gems.first[:path]).to be == context_path
+			expect(gems.first.name).to be == "fake-gem"
+			expect(gems.first.version).to be == "1.0.0"
+			expect(gems.first.path).to be == context_path
+			expect(gems.first.definitions.length).to be == 2
 		end
 		
 		it "can find a specific gem with context" do
 			helper = subject.new(specifications: @specifications)
-			gem_info = helper.find_gem_with_context("fake-gem")
+			package = helper.find_gem_with_context("fake-gem")
 			
-			expect(gem_info).to be_truthy
-			expect(gem_info[:name]).to be == "fake-gem"
-			expect(gem_info[:path]).to be == context_path
+			expect(package).to be_truthy
+			expect(package.name).to be == "fake-gem"
+			expect(package.path).to be == context_path
+			expect(package.definitions.length).to be == 2
 		end
 		
 		it "returns nil for gems without context" do
 			helper = subject.new(specifications: @specifications)
-			gem_info = helper.find_gem_with_context("non-existent-gem")
-			expect(gem_info).to be_nil
+			package = helper.find_gem_with_context("non-existent-gem")
+			expect(package).to be_nil
 		end
 		
 		it "can list context definitions for a gem" do

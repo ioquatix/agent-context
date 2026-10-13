@@ -43,22 +43,15 @@ module Agent
 			def name
 				@specification.name
 			end
+
+			# @returns [String] The provider gem version.
+			def version
+				@specification.version.to_s
+			end
 			
 			# @returns [String] The provider context directory.
 			def path
 				File.join(@specification.full_gem_path, "context")
-			end
-			
-			# Describe a provider for command presentation.
-			def information
-				{
-					name: name,
-					version: @specification.version.to_s,
-					summary: @specification.summary,
-					metadata: @specification.metadata,
-					path: path,
-					definitions: @definitions,
-				}
 			end
 			
 			# Load Markdown before descending into companion directories.
