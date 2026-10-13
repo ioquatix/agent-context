@@ -7,7 +7,7 @@ require "fileutils"
 require_relative "definition"
 require_relative "document"
 require_relative "skills/definition"
-require_relative "skills/errors"
+require_relative "errors"
 
 module Agent
 	module Context
@@ -20,13 +20,11 @@ module Agent
 				return package unless File.exist?(root) || File.symlink?(root)
 				
 				unless File.lstat(root).directory?
-					raise Skills::Invalid, "Context provider must be a regular directory: #{root}"
+					raise InvalidError, "Context provider must be a regular directory: #{root}"
 				end
 				
 				package.load_directory(root)
 				package
-			rescue Document::Invalid => error
-				raise Skills::Invalid, error.message
 			end
 			
 			# Retain the provider and its loaded definitions.
@@ -75,7 +73,7 @@ module Agent
 					elsif stat.file?
 						document = File.extname(file).downcase == ".md" ? Document.load(file) : nil
 						if document&.skill?
-							raise Skills::Invalid, "Skill documents must be directly inside context/: #{file}" unless directory == path
+							raise InvalidError, "Skill documents must be directly inside context/: #{file}" unless directory == path
 							@definitions << Skills::Definition.from_document(document, @specification)
 						else
 							@definitions << Definition.new(path: file, document: document)

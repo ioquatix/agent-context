@@ -5,7 +5,6 @@
 
 require_relative "skills/definition"
 require_relative "skills/ownership"
-require_relative "skills/errors"
 
 module Agent
 	module Context

@@ -6,7 +6,7 @@
 
 require "fileutils"
 require_relative "../definition"
-require_relative "errors"
+require_relative "../errors"
 require_relative "ownership"
 
 module Agent
@@ -34,7 +34,7 @@ module Agent
 					assets = File.join(File.dirname(file), local_name)
 					if File.exist?(assets) || File.symlink?(assets)
 						unless File.lstat(assets).directory?
-							raise Invalid, "Skill resources must be a regular directory: #{assets}"
+							raise InvalidError, "Skill resources must be a regular directory: #{assets}"
 						end
 					else
 						assets = nil
@@ -56,7 +56,7 @@ module Agent
 				# Validate an installed directory name.
 				def self.validate_name(name, file)
 					unless name.is_a?(String) && name.match?(Ownership::NAME_PATTERN) && name.length <= 64
-						raise Invalid, "Invalid skill name in #{file}: #{name.inspect}"
+						raise InvalidError, "Invalid skill name in #{file}: #{name.inspect}"
 					end
 				end
 				
@@ -66,12 +66,12 @@ module Agent
 					
 					description = frontmatter["description"]
 					unless description.is_a?(String)
-						raise Invalid, "Invalid skill description in #{file}"
+						raise InvalidError, "Invalid skill description in #{file}"
 					end
 					
 					description = description.strip
 					if description.empty? || description.length > 1024
-						raise Invalid, "Invalid skill description in #{file}"
+						raise InvalidError, "Invalid skill description in #{file}"
 					end
 				end
 				
@@ -156,11 +156,11 @@ module Agent
 						metadata = File.lstat(from)
 						
 						if metadata.symlink? || (!metadata.file? && !metadata.directory?)
-							raise Invalid, "Skill resources must be regular files or directories: #{from}"
+							raise InvalidError, "Skill resources must be regular files or directories: #{from}"
 						end
 						
 						if top_level && name.downcase == "skill.md"
-							raise Invalid, "#{name} is reserved for generated skill files: #{from}"
+							raise InvalidError, "#{name} is reserved for generated skill files: #{from}"
 						end
 						
 						if metadata.directory?

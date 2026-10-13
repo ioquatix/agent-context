@@ -5,7 +5,7 @@
 # Copyright, 2026, by Samuel Williams.
 
 require_relative "../document"
-require_relative "errors"
+require_relative "../errors"
 
 module Agent
 	module Context
@@ -14,10 +14,6 @@ module Agent
 			class Ownership
 				FILE_NAME = "SKILL.md"
 				NAME_PATTERN = /\A[a-z0-9]+(?:-[a-z0-9]+)*\z/
-				
-				# Raised when installed ownership cannot be safely interpreted.
-				class Invalid < Agent::Context::Skills::Invalid
-				end
 				
 				# Read a skill's installation ownership.
 				# @parameter directory [String] The installed skill directory.
@@ -31,19 +27,17 @@ module Agent
 						return
 					end
 					
-					raise Invalid, "Skill ownership must be a regular file: #{path}" unless stat.file?
+					raise InvalidError, "Skill ownership must be a regular file: #{path}" unless stat.file?
 					
 					metadata = Document.load(path).metadata
 					fields = ["ecosystem", "package", "version"]
 					return unless metadata["type"] == "skill" && metadata.key?("ecosystem")
 					
 					unless fields.all?{|field| metadata[field].is_a?(String) && !metadata[field].strip.empty?}
-						raise Invalid, "Invalid skill ownership: #{path}"
+						raise InvalidError, "Invalid skill ownership: #{path}"
 					end
 					
 					metadata.slice(*fields)
-				rescue Document::Invalid => error
-					raise Invalid, error.message
 				end
 				
 				# Collect ownership from installed skill directories.
@@ -56,7 +50,7 @@ module Agent
 						return {}
 					end
 					
-					raise Invalid, "Skill installation path must be a regular directory: #{directory}" unless stat.directory?
+					raise InvalidError, "Skill installation path must be a regular directory: #{directory}" unless stat.directory?
 					
 					Dir.children(directory).sort.each_with_object({}) do |name, owners|
 						path = File.join(directory, name)
@@ -64,7 +58,7 @@ module Agent
 						next unless owner = load(path)
 						
 						unless name.match?(NAME_PATTERN) && name.length <= 64
-							raise Invalid, "Invalid installed skill name: #{name.inspect}"
+							raise InvalidError, "Invalid installed skill name: #{name.inspect}"
 						end
 						
 						owners[name] = owner

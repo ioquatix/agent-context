@@ -89,7 +89,7 @@ describe Agent::Context::Installer do
 		File.write(File.join(provider, "context/guide.md"), "---\ndescription: [broken\n---\n\n# Guide")
 		expect do
 			installer.install
-		end.to raise_exception(Agent::Context::Skills::Invalid)
+		end.to raise_exception(Agent::Context::InvalidError)
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents/skills/provider-workflow"))
 	end
 	
@@ -133,7 +133,7 @@ describe Agent::Context::Installer do
 		other = specification.dup
 		other.version = "2.0.0"
 		installer = subject.new(root: consumer, specifications: [specification, other])
-		expect{installer.install(gem: "provider")}.to raise_exception(Agent::Context::Skills::Conflict)
+		expect{installer.install(gem: "provider")}.to raise_exception(Agent::Context::ConflictError)
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents"))
 	end
 	
@@ -141,7 +141,7 @@ describe Agent::Context::Installer do
 		context = File.join(provider, "context")
 		FileUtils.rm_r(context)
 		File.write(context, "Provider configuration")
-		expect{installer.install}.to raise_exception(Agent::Context::Skills::Invalid)
+		expect{installer.install}.to raise_exception(Agent::Context::InvalidError)
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents"))
 	end
 	

@@ -48,7 +48,7 @@ describe Agent::Context::Skills::Ownership do
 			File.write(File.join(skill_path, "SKILL.md"), content)
 			expect do
 				subject.scan(directory)
-			end.to raise_exception(subject::Invalid)
+			end.to raise_exception(Agent::Context::InvalidError)
 		end
 	end
 	
@@ -65,11 +65,11 @@ describe Agent::Context::Skills::Ownership do
 		File.symlink("missing.json", File.join(skill_path, "SKILL.md"))
 		expect do
 			subject.load(skill_path)
-		end.to raise_exception(subject::Invalid)
+		end.to raise_exception(Agent::Context::InvalidError)
 		File.write(File.join(directory, "blocker"), "Not a directory.")
 		expect do
 			subject.scan(File.join(directory, "blocker"))
-		end.to raise_exception(subject::Invalid)
+		end.to raise_exception(Agent::Context::InvalidError)
 	end
 	
 	it "validates the installed directory name" do
@@ -79,7 +79,7 @@ describe Agent::Context::Skills::Ownership do
 			write_owner(path, "provider", "1.0.0")
 			expect do
 				subject.scan(directory)
-			end.to raise_exception(subject::Invalid)
+			end.to raise_exception(Agent::Context::InvalidError)
 			FileUtils.rm_rf(path)
 		end
 	end

@@ -51,14 +51,14 @@ describe Agent::Context::Document do
 		File.write(path, "---\n- invalid\n---\n# Guide\n")
 		expect do
 			document
-		end.to raise_exception(subject::Invalid, message: be(:include?, path))
+		end.to raise_exception(Agent::Context::InvalidError, message: be(:include?, path))
 	end
 	
 	it "rejects arbitrary Ruby objects in YAML metadata" do
 		File.write(path, "---\nobject: !ruby/object:Object {}\n---\n# Guide\n")
 		expect do
 			document
-		end.to raise_exception(subject::Invalid, message: be(:include?, path))
+		end.to raise_exception(Agent::Context::InvalidError, message: be(:include?, path))
 	end
 	
 	it "edits native front matter while retaining the shared fixture body" do

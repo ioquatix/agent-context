@@ -119,7 +119,7 @@ describe Agent::Context::Installer do
 			
 			it "reports a missing gem" do
 				helper = subject.new(specifications: @specifications)
-				expect{helper.install(gem: "non-existent-gem")}.to raise_exception(Agent::Context::Skills::Error)
+				expect{helper.install(gem: "non-existent-gem")}.to raise_exception(Agent::Context::Error)
 			end
 			
 			it "installs dotfiles and files inside hidden context directories" do

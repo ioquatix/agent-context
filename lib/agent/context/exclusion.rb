@@ -5,15 +5,12 @@
 
 require "open3"
 require "fileutils"
+require_relative "errors"
 
 module Agent
 	module Context
 		# Represents local Git exclusions shared by context and skill installers.
 		class Exclusion
-			# Raised when the generated exclusion block cannot be interpreted.
-			class Invalid < StandardError
-			end
-			
 			BEGIN_MARKER = "# BEGIN bake-agent-context"
 			END_MARKER = "# END bake-agent-context"
 			
@@ -42,7 +39,7 @@ module Agent
 				
 				unless begins.empty? && ends.empty?
 					unless begins.length == 1 && ends.length == 1 && begins.first < ends.first
-						raise Invalid, "Malformed Agent Context exclusion block: #{path}"
+						raise InvalidError, "Malformed Agent Context exclusion block: #{path}"
 					end
 					
 					lines.slice!(begins.first..ends.first)

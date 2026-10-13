@@ -17,6 +17,7 @@ Choose the simplest structure that makes the behavior, state, and responsibiliti
 | Installed provenance | `Skills::Ownership` | `ownership` module |
 | Local Git exclusions | `Exclusion` | `exclude` module |
 | Command presentation | Bake task adapters | Bake task adapters |
+| Errors | `Agent::Context::Error`, `InvalidError`, `ConflictError` | `bake::Error` returned through `Result` |
 
 Each parser, metadata rule, and file format has one owner. Document parsing interprets Markdown and YAML; skill definitions apply name and description rules; ownership interprets installed provenance; installers select destinations and change files. Constructors retain supplied state. Reading, parsing, discovery, and installation have explicit entry points.
 

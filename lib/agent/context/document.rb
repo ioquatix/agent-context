@@ -6,15 +6,12 @@
 require "markly"
 require "yaml"
 require "date"
+require_relative "errors"
 
 module Agent
 	module Context
 		# Represents a Markdown source and its parsed front matter.
 		class Document
-			# Raised when context front matter cannot be interpreted.
-			class Invalid < ArgumentError
-			end
-			
 			# Read and parse a Markdown document.
 			def self.load(path)
 				parse(File.read(path), path)
@@ -31,12 +28,12 @@ module Agent
 				frontmatter = {}
 				if node && [nil, "yaml"].include?(language)
 					frontmatter = YAML.safe_load(node.string_content, permitted_classes: [Date, Time], aliases: false, fallback: {})
-					raise Invalid, "Context frontmatter must be a mapping: #{path}" unless frontmatter.is_a?(Hash)
+					raise InvalidError, "Context frontmatter must be a mapping: #{path}" unless frontmatter.is_a?(Hash)
 				end
 				
 				new(path, content, node, frontmatter)
 			rescue Psych::Exception => error
-				raise Invalid, "Invalid YAML frontmatter in #{path}: #{error.message}"
+				raise InvalidError, "Invalid YAML frontmatter in #{path}: #{error.message}"
 			end
 			
 			# Retain the source and its parsed representation.

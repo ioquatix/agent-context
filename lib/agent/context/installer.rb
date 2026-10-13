@@ -9,7 +9,7 @@ require "pathname"
 require "fileutils"
 
 require_relative "paths"
-require_relative "skills/errors"
+require_relative "errors"
 require_relative "skills/ownership"
 require_relative "skills/definition"
 require_relative "exclusion"
@@ -67,7 +67,7 @@ module Agent
 			def install(gem: nil)
 				# Resolve providers and load every definition once:
 				selected = packages(gem: gem)
-				raise Skills::Error, "No gem found: #{gem}" if gem && selected.empty?
+				raise Error, "No gem found: #{gem}" if gem && selected.empty?
 				definitions = selected.flat_map(&:definitions)
 				skills = definitions.grep(Skills::Definition)
 				
@@ -89,7 +89,7 @@ module Agent
 					gem ? specification.name == gem : !skip_local || File.expand_path(specification.full_gem_path) != @root
 				end
 				if gem && specifications.length > 1
-					raise Skills::Conflict, "Multiple resolved versions provide gem #{gem.inspect}"
+					raise ConflictError, "Multiple resolved versions provide gem #{gem.inspect}"
 				end
 				
 				specifications.map{|specification| Package.load(specification)}
@@ -98,7 +98,7 @@ module Agent
 			def install_skills(definitions, package:)
 				# Validate selected names and ownership before writing any skill:
 				duplicates = definitions.group_by(&:name).select{|_name, matches| matches.length > 1}
-				raise Skills::Conflict, "Multiple providers supply skills: #{duplicates.keys.join(", ")}" unless duplicates.empty?
+				raise ConflictError, "Multiple providers supply skills: #{duplicates.keys.join(", ")}" unless duplicates.empty?
 				
 				skills_path = File.join(@root, ".agents", "skills")
 				owners = Skills::Ownership.scan(skills_path)
@@ -130,11 +130,11 @@ module Agent
 					destination = File.join(skills_path, definition.name)
 					
 					if owner && owner.values_at("ecosystem", "package") != ["gem", definition.provider_name]
-						raise Skills::Conflict, "Skill #{definition.name.inspect} belongs to #{owner["ecosystem"]}:#{owner["package"]}"
+						raise ConflictError, "Skill #{definition.name.inspect} belongs to #{owner["ecosystem"]}:#{owner["package"]}"
 					end
 					
 					if (File.exist?(destination) || File.symlink?(destination)) && !owner
-						raise Skills::Conflict, "Skill #{definition.name.inspect} is not managed by Agent Context"
+						raise ConflictError, "Skill #{definition.name.inspect} is not managed by Agent Context"
 					end
 				end
 			end
