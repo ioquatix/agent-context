@@ -11,8 +11,8 @@ Choose the simplest structure that makes the behavior, state, and responsibiliti
 | Resolved provider | `Gem::Specification`, retained by `Package` | `Provider`, resolved by `Installer::discover` |
 | Parsed Markdown | `Document` | `ContextDocument` in `document.rs` |
 | Loaded provider definitions | `Package#definitions` | `Package::definitions` |
-| Ordinary definition | `Definition` | `Definition::File(ContextFile)` |
-| Skill definition | `Skills::Definition < Definition` | `Definition::Skill(Skill)` |
+| Ordinary definition | `Definition` | `Definition` |
+| All definition variants | `Definition` and `Skills::Definition < Definition` | `ContextDefinition::File(Definition)` or `ContextDefinition::Skill(Skill)` |
 | Installation workflow | `Installer#install` | `Installer::install` |
 | Installed provenance | `Skills::Ownership` | `ownership` module |
 | Local Git exclusions | `Exclusion` | `exclude` module |
@@ -41,7 +41,7 @@ The portable YAML form uses `---` delimiters. Rust also recognizes the additiona
 
 For each provider, load Markdown documents before descending into subdirectories. Root-level skill declarations identify companion resource directories. Keep those resources opaque, including Markdown-looking assets.
 
-The loaded package stores ordinary definitions and skill definitions in one collection. A Rust `ContextFile` is the ordinary-file payload: its provider-relative destination path, source path, and optional parsed `ContextDocument` let the package install Markdown from the loaded document and copy opaque files directly. This corresponds to Ruby's ordinary `Definition`; `ContextDocument` corresponds to Ruby's `Document`.
+The loaded package stores ordinary definitions and skills in one collection. Rust's `Definition` is the ordinary-file payload, matching Ruby's ordinary `Definition`; it carries the provider-relative destination path, source path, and optional parsed `ContextDocument`. Rust's `ContextDefinition` enum holds either that file definition or a skill. `ContextDocument` corresponds to Ruby's `Document`.
 
 Listing, showing, and installation use this classification. The main installation operation resolves providers and loads each provider once, then applies the ordinary or skill destination rules to each definition.
 
