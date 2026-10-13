@@ -8,11 +8,11 @@ module Agent
 		# Base class for errors raised while loading or installing context.
 		class Error < StandardError
 		end
-
+		
 		# Raised when provider content or installation metadata is invalid.
 		class InvalidError < Error
 		end
-
+		
 		# Raised when providers or installation destinations conflict.
 		class ConflictError < Error
 		end
