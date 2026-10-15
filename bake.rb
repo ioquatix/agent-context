@@ -9,5 +9,5 @@
 def after_gem_release_version_increment(version)
 	context["modernize:license"].call
 	context["releases:update"].call(version)
-	context["utopia:project:readme:update"].call
+	context["utopia:project:update"].call
 end
