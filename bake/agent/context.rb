@@ -20,17 +20,17 @@ attr :installer
 # @parameter gem [String | Nil] An optional provider gem.
 def list(gem: nil)
 	if gem
-		provider = @installer.find_gem_with_context(gem)
-		if provider
+		provider = @installer.find_provider(gem)
+		if provider && !provider.definitions.empty?
 			puts "Context files for gem '#{gem}':"
 			provider.definitions.each do |definition|
-				puts "  #{definition.display_name(provider.path)}"
+				puts "  #{definition.display_name}"
 			end
 		else
 			puts "No context found for gem '#{gem}'"
 		end
 	else
-		gems = @installer.find_gems_with_context
+		gems = @installer.providers.reject{|provider| provider.definitions.empty?}
 		if gems.any?
 			puts "Gems with context available:"
 			gems.each do |provider|

@@ -41,7 +41,7 @@ describe "Agent Context tasks" do
 			context.call("agent:context:install", "--gem", "provider")
 			expect(output.join("\n")).to be(:include?, "Provider Guide")
 			expect(output.join("\n")).to be(:include?, "workflow (skill)")
-			expect(output.join("\n")).to be(:include?, "name: provider-workflow")
+			expect(output.join("\n")).to be(:include?, "# Workflow")
 			expect(output.join("\n")).to be(:include?, "Installed skills: provider-workflow")
 			expect(File).to be(:exist?, File.join(root, ".agents/context/provider/guide.md"))
 			expect(File).to be(:exist?, File.join(root, ".agents/skills/provider-workflow/SKILL.md"))

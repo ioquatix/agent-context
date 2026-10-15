@@ -40,17 +40,9 @@ module Agent
 						assets = nil
 					end
 					
-					document = source.render(frontmatter)
+					installation_content = source.render(frontmatter)
 					
-					new(
-						name: installed_name,
-						description: frontmatter["description"],
-						resources: assets,
-						source_file: file,
-						document: document,
-						provider_name: specification.name,
-						provider_version: specification.version.to_s,
-					)
+					new(source, specification, installed_name, frontmatter["description"], assets, installation_content)
 				end
 				
 				# Validate an installed directory name.
@@ -75,28 +67,18 @@ module Agent
 					end
 				end
 				
-				# Initialize a skill from a context document.
-				# @parameter name [String] The installed skill name.
-				# @parameter description [String] When to use the skill.
-				# @parameter resources [String | Nil] The companion resource directory.
-				# @parameter provider_name [String] The provider gem.
-				# @parameter provider_version [String] The provider version.
-				# @parameter source_file [String] The source context document.
-				# @parameter document [String] Generated skill instructions.
-				def initialize(
-					name:, description:, resources:,
-					provider_name:, provider_version:,
-					source_file:, document:
-				)
-					super(path: source_file)
+				# Retain the source document, specification, and prepared skill instructions.
+				def initialize(document, specification, name, description, resources, installation_content)
+					super(File.basename(document.path), document.path, document)
+					@specification = specification
 					@name = name
 					@description = description
 					@resources = resources
-					@provider_name = provider_name
-					@provider_version = provider_version
-					@source_file = source_file
-					@content = document
+					@installation_content = installation_content
 				end
+				
+				# @attribute [Gem::Specification] The resolved package specification.
+				attr_reader :specification
 				
 				# @attribute [String] The installed skill name.
 				attr_reader :name
@@ -107,19 +89,8 @@ module Agent
 				# @attribute [String | Nil] The companion resource directory.
 				attr_reader :resources
 				
-				# @attribute [String] The provider gem.
-				attr_reader :provider_name
-				
-				# @attribute [String] The provider version.
-				attr_reader :provider_version
-				
-				# @attribute [String] The source context document.
-				attr_reader :source_file
-				
-				# @returns [String] The installed skill instructions.
-				def content
-					@content
-				end
+				# @attribute [String] The generated instructions with resolved provenance.
+				attr_reader :installation_content
 				
 				# Whether this definition installs as an Agent Skill.
 				# @returns [bool] `true` for skill definitions.
@@ -128,18 +99,17 @@ module Agent
 				end
 				
 				# Return the filename shown by the context list with its skill marker.
-				# @parameter _context_path [String] The provider's context directory.
 				# @returns [String] The source filename and skill marker.
-				def display_name(_context_path)
-					"#{File.basename(@source_file, File.extname(@source_file))} (skill)"
+				def display_name
+					"#{File.basename(@path, File.extname(@path))} (skill)"
 				end
 				
 				# Write instructions before resources so ownership is available during refresh.
 				# @parameter destination [String] The installed skill directory.
-				def write_to(destination)
+				def install(destination)
 					FileUtils.mkdir_p(destination)
 					begin
-						File.write(File.join(destination, "SKILL.md"), @content)
+						File.write(File.join(destination, "SKILL.md"), @installation_content)
 					rescue
 						FileUtils.rm_rf(destination)
 						raise

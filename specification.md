@@ -48,6 +48,10 @@ A **Context Consumer** is any project or tool that utilizes contextual informati
 - Security considerations.
 - Troubleshooting guides.
 
+A **Definition** is one installable unit loaded from a provider: an ordinary file, or a skill document together with its companion resources. A parsed **Document** represents the Markdown source and front matter of a definition. Files such as images and examples remain opaque.
+
+A definition's **path** is its filename relative to the provider's `context/` directory, including any subdirectories and extension. Its **source path** locates the authored file in the installed package. A skill's **installed name** is its authored or derived `name`, used for its destination directory. These identifiers serve different purposes.
+
 ### 2.4 Context Installation
 
 **Context Installation** is the process of copying context files from dependencies into a consumer's local context directory, making them available for use by tools and AI agents.
@@ -161,7 +165,7 @@ metadata:
 ---
 ```
 
-Within a context document's YAML `metadata` mapping, the string `skill` declares a skill. Consumers MUST treat all other `metadata.type` values, including absent, null, and unfamiliar values, as ordinary context. This allows providers to introduce new types while existing consumers continue installing their documents.
+Within a context document's YAML `metadata` mapping, the string `skill` declares a skill. Consumers MUST treat all other `metadata.type` values, including absent, null, and unfamiliar values, as ordinary context. This allows providers to introduce new types while existing consumers continue installing their documents. Consumers MUST interpret only mappings as context metadata; other values of `metadata` are unrelated authored data and MUST be retained as ordinary context.
 
 An authored top-level `name` MUST be preserved and used as the installed directory name. When `name` is absent, consumers MUST derive it from the lowercase provider package name (normalizing underscores to hyphens), a hyphen, and the source filename without its `.md` extension. Installed names MUST use lowercase ASCII letters, digits, and single hyphens, contain 1–64 characters, and begin and end with a letter or digit. Descriptions MUST contain 1–1,024 characters after trimming whitespace for validation; consumers MUST retain the authored description value.
 
@@ -213,6 +217,10 @@ Skill documents and their resources are excluded from ordinary context copying e
 Consumers SHOULD provide commands to list providers, list their definitions, and show a selected definition. Agents discover installed guidance by enumerating Markdown files under `.agents/context/<selector>/` and reading the files relevant to their task. A packaged usage skill SHOULD explain this workflow and how to install missing guidance.
 
 Providers SHOULD use descriptive filenames, keep guides focused on one topic, and link related documents. Ordinary documents need no front matter. Unrelated ordinary-document metadata MUST be tolerated. Skill resource files are opaque assets and MUST NOT be parsed as context documents.
+
+Provider lookup identifies dependencies with a `context/` directory, including empty directories. An empty provider has no definitions; listing commands MAY omit it from the available guidance list. Refreshing an empty provider still reconciles its installed output.
+
+Showing a definition MUST return its authored content. Lookup MUST prefer an exact provider-relative path, then that path with `.md` appended when no extension was supplied. Consumers MAY also accept installed skill names as a fallback after source path lookup. Definition paths retain their filename case and extension. Generated skill instructions add installation provenance when installed.
 
 The installed directory layout is the discovery interface.
 

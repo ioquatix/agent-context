@@ -39,7 +39,7 @@ describe Agent::Context::Installer do
 		end
 		installer = subject.new(root: consumer, specifications: specifications)
 		expect(enumerations).to be == 0
-		expect(installer.find_gems_with_context.map(&:name)).to be == ["provider"]
+		expect(installer.providers.map(&:name)).to be == ["provider"]
 		installer.install
 		expect(File.read(File.join(consumer, ".agents/context/provider/guide.md"))).to be == File.read(File.join(provider, "context/guide.md"))
 	end
@@ -76,13 +76,13 @@ describe Agent::Context::Installer do
 	end
 	
 	it "lists and shows skills alongside ordinary context" do
-		definitions = installer.list_context_definitions("provider")
-		expect(definitions.map{|definition| definition.display_name(File.join(provider, "context"))}).to be == ["guide.md", "workflow (skill)"]
-		expect(installer.show_context_file("provider", "workflow")).to be(:include?, "name: provider-workflow")
+		definitions = installer.find_provider("provider").definitions
+		expect(definitions.map{|definition| definition.display_name}).to be == ["guide.md", "workflow (skill)"]
+		expect(installer.show_context_file("provider", "workflow")).to be == File.read(File.join(provider, "context/workflow.md"))
 		expect(installer.show_context_file("provider", "workflow/references/checklist.md")).to be_nil
 		expect do
 			installer.show_context_file("provider", "../secret")
-		end.to raise_exception(ArgumentError)
+		end.to raise_exception(Agent::Context::InvalidError)
 	end
 	
 	it "validates front matter when classifying context documents" do
@@ -143,6 +143,54 @@ describe Agent::Context::Installer do
 		File.write(context, "Provider configuration")
 		expect{installer.install}.to raise_exception(Agent::Context::InvalidError)
 		expect(File).not.to be(:exist?, File.join(consumer, ".agents"))
+	end
+	
+	it "resolves source paths before installed skill names and retains authored content" do
+		context = File.join(provider, "context")
+		source = "---\nname: guide\ndescription: Run workflow.\nmetadata: {type: skill}\n---\n# Workflow\n"
+		File.write(File.join(context, "workflow.md"), source)
+		package = installer.find_provider("provider")
+		definition = package.find_definition("workflow")
+		expect(definition.path).to be == "workflow.md"
+		expect(definition.source_path).to be == File.join(context, "workflow.md")
+		expect(definition.specification).to be_equal(specification)
+		expect(definition.content).to be == source
+		expect(definition.installation_content).to be(:include?, "ecosystem: gem")
+		expect(installer.show_context_file("provider", "guide")).to be == File.read(File.join(context, "guide.md"))
+		expect(installer.show_context_file("provider", "guide.md")).to be == File.read(File.join(context, "guide.md"))
+		
+		File.delete(File.join(context, "guide.md"))
+		expect(package.find_definition("guide").content).to be == "# Guide\n\nUse the provider."
+		expect(installer.show_context_file("provider", "guide")).to be == source
+		File.write(File.join(context, "guide"), "exact source")
+		File.write(File.join(context, "guide.md"), "markdown source")
+		expect(installer.show_context_file("provider", "guide")).to be == "exact source"
+		
+		File.rename(File.join(context, "workflow.md"), File.join(context, "workflow.MD"))
+		expect(installer.show_context_file("provider", "workflow.MD")).to be == source
+		["", "/private.md", "./guide.md", "nested/../guide.md"].each do |path|
+			expect{package.find_definition(path)}.to raise_exception(Agent::Context::InvalidError)
+		end
+	end
+	
+	it "retains empty providers and refreshes their installed skills" do
+		installer.install
+		context = File.join(provider, "context")
+		FileUtils.rm_r(Dir.children(context).map{|name| File.join(context, name)})
+		expect(installer.find_provider("provider").definitions).to be == []
+		expect(installer.providers.map(&:name)).to be == ["provider"]
+		expect(installer.install(gem: "provider")).to be == {context: [], skills: []}
+		expect(Agent::Context::Skills::Ownership.scan(File.join(consumer, ".agents/skills"))).to be == {}
+	end
+	
+	it "preserves unrelated metadata when installing ordinary definitions" do
+		[[], 42, "unrelated"].each do |metadata|
+			source = {"metadata" => metadata}.to_yaml + "---\n# Guide\n"
+			File.write(File.join(provider, "context/guide.md"), source)
+			expect(installer.show_context_file("provider", "guide")).to be == source
+			installer.install
+			expect(File.read(File.join(consumer, ".agents/context/provider/guide.md"))).to be == source
+		end
 	end
 	
 end

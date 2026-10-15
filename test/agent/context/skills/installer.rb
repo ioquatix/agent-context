@@ -43,11 +43,11 @@ describe Agent::Context::Installer do
 	end
 	
 	def skill_definitions(gem_name)
-		Array(installer.list_context_definitions(gem_name)).grep(Agent::Context::Skills::Definition)
+		Array(installer.find_provider(gem_name)&.definitions).grep(Agent::Context::Skills::Definition)
 	end
 	
 	it "finds gems which provide skills" do
-		gems = installer.find_gems_with_context
+		gems = installer.providers
 		
 		expect(gems.length).to be == 1
 		expect(gems.first.name).to be == "fake-gem"
@@ -67,12 +67,12 @@ describe Agent::Context::Installer do
 	it "shows a skill instruction file" do
 		content = installer.show_context_file("fake-gem", "fake-gem-ruby-testing")
 		
-		expect(content).to be(:include?, "name: fake-gem-ruby-testing")
+		expect(content).to be == File.read(File.join(provider_root, "context/ruby-testing.md"))
 		expect(content).to be(:include?, "# Instructions")
 	end
 	
 	it "returns nil for a gem without skills" do
-		expect(installer.find_gem_with_context("missing-gem")).to be_nil
+		expect(installer.find_provider("missing-gem")).to be_nil
 		expect do
 			installer.install(gem: "missing-gem")
 		end.to raise_exception(Agent::Context::Error)
@@ -84,7 +84,7 @@ describe Agent::Context::Installer do
 		
 		expect(skill_definitions("fake-gem").map(&:name)).to be == ["fake-gem-ruby-testing"]
 		File.delete(File.join(provider_root, "context/ruby-testing.md"))
-		expect(installer.find_gems_with_context).to be == []
+		expect(installer.providers.first.definitions).to be == []
 	end
 	
 	it "skips a gem loaded from the consuming project by default" do
@@ -92,8 +92,8 @@ describe Agent::Context::Installer do
 		local_specification = build_specification("local-gem", "1.0.0", consumer_root)
 		local_installer = subject.new(root: consumer_root, specifications: [local_specification])
 		
-		expect(local_installer.find_gems_with_context).to be == []
-		expect(local_installer.find_gems_with_context(skip_local: false).map(&:name)).to be == ["local-gem"]
+		expect(local_installer.providers).to be == []
+		expect(local_installer.providers(skip_local: false).map(&:name)).to be == ["local-gem"]
 	end
 	
 	with "installation" do
@@ -196,7 +196,7 @@ describe Agent::Context::Installer do
 		it "lists unmarked documents as ordinary context" do
 			File.write(File.join(provider_root, "context/ruby-testing.md"), "# Plain guidance\n")
 			expect(skill_definitions("fake-gem")).to be == []
-			expect(installer.find_gems_with_context.map(&:name)).to be == ["fake-gem"]
+			expect(installer.providers.map(&:name)).to be == ["fake-gem"]
 		end
 		
 		it "installs skills alongside unfamiliar context types" do
@@ -245,7 +245,7 @@ describe Agent::Context::Installer do
 	it "removes a provider's last skill and cleans disappeared gem providers" do
 		installer.install
 		FileUtils.rm_rf(File.join(provider_root, "context"))
-		expect(installer.install(gem: "fake-gem")[:skills]).to be == []
+		expect(installer.install[:skills]).to be == []
 		expect(File).not.to be(:exist?, File.join(consumer_root, ".agents/skills/fake-gem-ruby-testing"))
 		write_skill(provider_root, "ruby-testing", description: "Test projects.")
 		installer.install
@@ -426,7 +426,7 @@ describe Agent::Context::Installer do
 		package = Agent::Context::Package.load(specifications.first)
 		File.write(File.join(context, "a-guide.md"), "# Changed\n")
 		destination = File.join(consumer_root, ".agents/context/fake-gem")
-		package.install(destination)
+		package.install_files(destination)
 		expect(File.read(File.join(destination, "a-guide.md"))).to be == "# Original\n"
 		expect(File.binread(File.join(destination, "z-image.bin"))).to be == "\x00\xff".b
 	end

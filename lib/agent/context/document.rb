@@ -31,17 +31,21 @@ module Agent
 					raise InvalidError, "Context frontmatter must be a mapping: #{path}" unless frontmatter.is_a?(Hash)
 				end
 				
-				new(path, content, node, frontmatter)
+				# Interpret only mappings as context metadata, retaining other authored values:
+				metadata = frontmatter["metadata"]
+				metadata = {} unless metadata.is_a?(Hash)
+				new(path, content, node, frontmatter, metadata)
 			rescue Psych::Exception => error
 				raise InvalidError, "Invalid YAML frontmatter in #{path}: #{error.message}"
 			end
 			
 			# Retain the source and its parsed representation.
-			def initialize(path, content, node, frontmatter)
+			def initialize(path, content, node, frontmatter, metadata)
 				@path = path
 				@content = content
 				@node = node
 				@frontmatter = frontmatter
+				@metadata = metadata
 			end
 			
 			# @attribute [String] The document source path.
@@ -54,9 +58,7 @@ module Agent
 			attr_reader :frontmatter
 			
 			# The extensible metadata mapping within front matter.
-			def metadata
-				@frontmatter["metadata"] || {}
-			end
+			attr_reader :metadata
 			
 			# Whether the document declares a skill.
 			def skill?
@@ -72,8 +74,9 @@ module Agent
 			
 			# Serialize edited front matter through its AST node, preserving the body.
 			def render(frontmatter)
-				@node.string_content = YAML.dump(frontmatter).delete_prefix("---\n")
-				@node.to_markdown + body
+				node = @node.dup
+				node.string_content = YAML.dump(frontmatter).delete_prefix("---\n")
+				node.to_markdown + body
 			end
 			
 			# Write the loaded source to its destination.

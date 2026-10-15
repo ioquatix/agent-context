@@ -27,6 +27,8 @@ bundle exec bake agent:context:install --gem async
 
 Ordinary context is copied to `.agents/context/GEM/`. Repository instructions can direct agents to discover and read relevant guides there.
 
+Source filenames take precedence over installed skill names. The `show` command returns authored content, including for skills; generated installation metadata is available in the installed `SKILL.md`.
+
 ## Use Dependency Skills
 
 Skills contain procedures for particular tasks and are installed under `.agents/skills/`. Use the matching skill's instructions and resources when its description applies to the work.

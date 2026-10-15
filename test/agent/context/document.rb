@@ -67,6 +67,7 @@ describe Agent::Context::Document do
 			source = subject.parse(fixture.gsub("\n", ending), path)
 			output = source.render(source.frontmatter.merge("license" => "Apache-2.0"))
 			installed = subject.parse(output, path)
+			expect(source.content).to be == fixture.gsub("\n", ending)
 			expect(installed.body).to be == source.body
 			expect(installed.frontmatter["license"]).to be == "Apache-2.0"
 			expect(installed.metadata["author"]).to be == "Provider"

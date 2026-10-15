@@ -5,7 +5,6 @@
 # Copyright, 2025-2026, by Samuel Williams.
 
 require "rubygems"
-require "pathname"
 require "fileutils"
 
 require_relative "paths"
@@ -29,45 +28,26 @@ module Agent
 			attr_reader :root
 			attr_reader :context_path
 			
-			# Find providers with ordinary context or skills.
-			def find_gems_with_context(skip_local: true)
-				packages(skip_local: skip_local).reject{|package| package.definitions.empty?}
+			# Load providers with a context directory, including empty providers.
+			def providers(skip_local: true)
+				packages(skip_local: skip_local)
 			end
 			
-			# Find one provider with context or skills.
-			def find_gem_with_context(gem_name)
-				package = packages(gem: gem_name).first
-				package if package && !package.definitions.empty?
+			# Load one provider by its gem name.
+			def find_provider(name)
+				packages(gem: name).first
 			end
 			
-			# List every definition from a provider, including skill documents.
-			def list_context_definitions(gem_name)
-				package = packages(gem: gem_name).first
-				package.definitions if package && !package.definitions.empty?
-			end
-			
-			# Read a selected document, opaque resource, or generated skill document.
+			# Read the authored content of a selected definition.
 			def show_context_file(gem_name, file_name)
-				requested = Pathname.new(file_name)
-				if requested.absolute? || requested.each_filename.any?{|part| part == ".."}
-					raise ArgumentError, "Context file must be a relative path inside context/"
-				end
-				
-				package = packages(gem: gem_name).first
-				return unless package
-				
-				candidates = [File.join(package.path, file_name)]
-				candidates << "#{candidates.first}.md" if File.extname(file_name).empty?
-				definition = package.definitions.find{|item| candidates.include?(item.path)}
-				definition ||= package.definitions.find{|item| item.skill? && item.name == file_name}
-				definition&.content
+				find_provider(gem_name)&.find_definition(file_name)&.content
 			end
 			
 			# Install all selected definitions and reconcile dependency-owned skills.
 			def install(gem: nil)
 				# Resolve providers and load every definition once:
 				selected = packages(gem: gem)
-				raise Error, "No gem found: #{gem}" if gem && selected.empty?
+				raise Error, "No context found for gem: #{gem}" if gem && selected.empty?
 				definitions = selected.flat_map(&:definitions)
 				skills = definitions.grep(Skills::Definition)
 				
@@ -76,7 +56,7 @@ module Agent
 				
 				# Refresh ordinary files from the same loaded definitions:
 				installed_context = selected.filter_map do |package|
-					package.name if package.install(File.join(@context_path, package.name))
+					package.name if package.install_files(File.join(@context_path, package.name))
 				end
 				
 				{context: installed_context, skills: installed_skills}
@@ -92,7 +72,7 @@ module Agent
 					raise ConflictError, "Multiple resolved versions provide gem #{gem.inspect}"
 				end
 				
-				specifications.map{|specification| Package.load(specification)}
+				specifications.filter_map{|specification| Package.load(specification)}
 			end
 			
 			def install_skills(definitions, package:)
@@ -115,7 +95,7 @@ module Agent
 				definitions.each do |definition|
 					destination = File.join(skills_path, definition.name)
 					FileUtils.rm_rf(destination)
-					definition.write_to(destination)
+					definition.install(destination)
 				end
 				stale.each{|name| FileUtils.rm_rf(File.join(skills_path, name))}
 				
@@ -129,7 +109,7 @@ module Agent
 					owner = owners[definition.name]
 					destination = File.join(skills_path, definition.name)
 					
-					if owner && owner.values_at("ecosystem", "package") != ["gem", definition.provider_name]
+					if owner && owner.values_at("ecosystem", "package") != ["gem", definition.specification.name]
 						raise ConflictError, "Skill #{definition.name.inspect} belongs to #{owner["ecosystem"]}:#{owner["package"]}"
 					end
 					
