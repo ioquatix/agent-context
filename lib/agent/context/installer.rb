@@ -2,36 +2,23 @@
 
 # Released under the MIT License.
 # Copyright, 2025, by Shopify Inc.
-# Copyright, 2025, by Samuel Williams.
+# Copyright, 2025-2026, by Samuel Williams.
 
 require "rubygems"
 require "fileutils"
-require "pathname"
-require "yaml"
 
 require_relative "paths"
+require_relative "errors"
+require_relative "skills/ownership"
+require_relative "skills/definition"
+require_relative "exclusion"
+require_relative "package"
 
 module Agent
 	module Context
-		# Installer class for managing context files from Ruby gems.
-		# 
-		# This class provides methods to find, list, show, and install context files
-		# from gems that provide them in a `context/` directory.
+		# Discovers, lists, reads, and installs context from resolved Ruby gems.
 		class Installer
-			CANONICAL_ORDER = [
-				"getting-started",
-				"overview",
-				"usage",
-				"configuration",
-				"migration",
-				"troubleshooting",
-				"debugging"
-			]
-			
-			# Initialize a new Installer instance.
-			#
-			# @parameter root [String] The root directory to work from (default: current directory).
-			# @parameter specifications [Gem::Specification] The gem specifications to search (default: all installed gems).
+			# Retain the consuming project and gem specifications.
 			def initialize(root: Dir.pwd, specifications: ::Gem::Specification)
 				@root = File.expand_path(root)
 				@context_path = File.join(@root, CONTEXT_PATH)
@@ -41,219 +28,95 @@ module Agent
 			attr_reader :root
 			attr_reader :context_path
 			
-			# Find all gems that have a context directory
-			def find_gems_with_context(skip_local: true)
-				gems_with_context = []
-				
-				@specifications.each do |spec|
-					# Skip gems loaded from current working directory if requested:
-					next if skip_local && File.expand_path(spec.full_gem_path) == @root
-					
-					context_path = File.join(spec.full_gem_path, "context")
-					if Dir.exist?(context_path)
-						gems_with_context << {
-							name: spec.name,
-							version: spec.version.to_s,
-							summary: spec.summary,
-							metadata: spec.metadata,
-							path: context_path
-						}
-					end
-				end
-				
-				gems_with_context
+			# Load providers with a context directory, including empty providers.
+			def providers(skip_local: true)
+				packages(skip_local: skip_local)
 			end
 			
-			# Find a specific gem with context.
-			def find_gem_with_context(gem_name)
-				spec = @specifications.find{|spec| spec.name == gem_name}
-				return nil unless spec
-				
-				context_path = File.join(spec.full_gem_path, "context")
-				
-				if Dir.exist?(context_path)
-					{
-						name: spec.name,
-						version: spec.version.to_s,
-						summary: spec.summary,
-						metadata: spec.metadata,
-						path: context_path
-					}
-				else
-					nil
-				end
+			# Load one provider by its gem name.
+			def find_provider(name)
+				packages(gem: name).first
 			end
 			
-			# List context files for a gem.
-			def list_context_files(gem_name)
-				gem = find_gem_with_context(gem_name)
-				return nil unless gem
-				
-				Dir.glob(File.join(gem[:path], "**/*")).select{|f| File.file?(f)}
-			end
-			
-			# Show content of a specific context file.
+			# Read the authored content of a selected definition.
 			def show_context_file(gem_name, file_name)
-				gem = find_gem_with_context(gem_name)
-				return nil unless gem
-				
-				# Try to find the file with or without extension:
-				possible_paths = [
-					File.join(gem[:path], file_name),
-					File.join(gem[:path], "#{file_name}.md"),
-					File.join(gem[:path], "#{file_name}.md")
-				]
-				
-				file_path = possible_paths.find{|path| File.exist?(path)}
-				return nil unless file_path
-				
-				File.read(file_path)
+				find_provider(gem_name)&.find_definition(file_name)&.content
 			end
 			
-			# Install context from a specific gem.
-			def install_gem_context(gem_name)
-				gem = find_gem_with_context(gem_name)
-				return false unless gem
+			# Install all selected definitions and reconcile dependency-owned skills.
+			def install(gem: nil)
+				# Resolve providers and load every definition once:
+				selected = packages(gem: gem)
+				raise Error, "No context found for gem: #{gem}" if gem && selected.empty?
+				definitions = selected.flat_map(&:definitions)
+				skills = definitions.grep(Skills::Definition)
 				
-				target_path = File.join(@context_path, gem_name)
+				# Apply the skill-specific destination and ownership rules:
+				installed_skills = install_skills(skills, package: gem)
 				
-				# Remove old package directory if it exists to ensure clean install
-				FileUtils.rm_rf(target_path) if Dir.exist?(target_path)
-				
-				FileUtils.mkdir_p(target_path)
-				
-				# Copy all files from the gem's context directory:
-				FileUtils.cp_r(File.join(gem[:path], "."), target_path)
-				
-				# Generate index.yaml if it doesn't exist, passing the full gem hash
-				ensure_gem_index(gem, target_path)
-				
-				true
-			end
-			
-			# Install context from all gems.
-			def install_all_context(skip_local: true)
-				gems = find_gems_with_context(skip_local: skip_local)
-				installed = []
-				
-				gems.each do |gem|
-					if install_gem_context(gem[:name])
-						installed << gem[:name]
-					end
+				# Refresh ordinary files from the same loaded definitions:
+				installed_context = selected.filter_map do |package|
+					package.name if package.install_files(File.join(@context_path, package.name))
 				end
 				
-				installed
+				{context: installed_context, skills: installed_skills}
 			end
 			
 			private
 			
-			# Generate a dynamic index from gemspec when no index.yaml is present
-			def generate_dynamic_index(gem, gem_directory)
-				# Collect all markdown files
-				markdown_files = Dir.glob(File.join(gem_directory, "**", "*.md")).sort
-				
-				# Sort files: canonical first, then alpha
-				files_sorted = markdown_files.sort_by do |file_path|
-					base_filename = File.basename(file_path, ".md").downcase
-					canonical_index = CANONICAL_ORDER.index(base_filename)
-					[canonical_index ? CANONICAL_ORDER.index(base_filename) : CANONICAL_ORDER.length, base_filename]
+			def packages(gem: nil, skip_local: true)
+				specifications = @specifications.select do |specification|
+					gem ? specification.name == gem : !skip_local || File.expand_path(specification.full_gem_path) != @root
+				end
+				if gem && specifications.length > 1
+					raise ConflictError, "Multiple resolved versions provide gem #{gem.inspect}"
 				end
 				
-				files = []
-				files_sorted.each do |file_path|
-					next if File.basename(file_path) == "index.yaml" # Skip the index file itself
-					title, description = extract_content(file_path)
-					relative_path = file_path.sub("#{gem_directory}/", "")
-					files << {
-						"path" => relative_path,
-						"title" => title,
-						"description" => description
-					}
-				end
-				
-				{
-					"description" => gem[:summary] || "Context files for #{gem[:name]}",
-					"metadata" => gem[:metadata],
-					"files" => files
-				}
+				specifications.filter_map{|specification| Package.load(specification)}
 			end
 			
-			# Check if a gem has an index.yaml file, generate one if not
-			def ensure_gem_index(gem, gem_directory)
-				index_path = File.join(gem_directory, "index.yaml")
+			def install_skills(definitions, package:)
+				# Validate selected names and ownership before writing any skill:
+				duplicates = definitions.group_by(&:name).select{|_name, matches| matches.length > 1}
+				raise ConflictError, "Multiple providers supply skills: #{duplicates.keys.join(", ")}" unless duplicates.empty?
 				
-				unless File.exist?(index_path)
-					# Generate dynamic index from gemspec
-					index = generate_dynamic_index(gem, gem_directory)
+				skills_path = File.join(@root, ".agents", "skills")
+				owners = Skills::Ownership.scan(skills_path)
+				validate_skill_destinations(definitions, skills_path, owners)
+				
+				names = definitions.map(&:name)
+				owned = owners.select do |_name, owner|
+					owner["ecosystem"] == "gem" && (!package || owner["package"] == package)
+				end
+				stale = owned.keys - names
+				
+				# Refresh selected skills, then remove stale entries in this scope:
+				FileUtils.mkdir_p(skills_path) unless definitions.empty? && stale.empty?
+				definitions.each do |definition|
+					destination = File.join(skills_path, definition.name)
+					FileUtils.rm_rf(destination)
+					definition.install(destination)
+				end
+				stale.each{|name| FileUtils.rm_rf(File.join(skills_path, name))}
+				
+				# Keep local Git exclusions aligned with the remaining installed skills:
+				Exclusion.prepare(@root, (owners.keys - stale + names).uniq)&.apply
+				names
+			end
+			
+			def validate_skill_destinations(definitions, skills_path, owners)
+				definitions.each do |definition|
+					owner = owners[definition.name]
+					destination = File.join(skills_path, definition.name)
 					
-					# Write the generated index
-					File.write(index_path, index.to_yaml)
-					Console.debug("Generated dynamic index for #{gem[:name]}: #{index_path}")
-				end
-				
-				# Load and return the index
-				YAML.load_file(index_path)
-			rescue => error
-				Console.debug("Error generating index for #{gem[:name]}: #{error.message}")
-				# Return a fallback index
-				{
-					"description" => gem[:summary] || "Context files for #{gem[:name]}",
-					"metadata" => gem[:metadata],
-					"files" => []
-				}
-			end
-			
-			def extract_content(file_path)
-				content = File.read(file_path)
-				lines = content.lines.map(&:strip)
-				
-				title = extract_title(lines)
-				description = extract_description(lines)
-				
-				[title, description]
-			end
-			
-			def extract_title(lines)
-				# Look for the first markdown header
-				header_line = lines.find{|line| line.start_with?("#")}
-				if header_line
-					# Remove markdown header syntax and clean up
-					header_line.sub(/^#+\s*/, "").strip
-				else
-					# If no header found, use a default
-					"Documentation"
-				end
-			end
-			
-			def extract_description(lines)
-				# Skip empty lines and headers to find the first paragraph
-				content_start = false
-				description_lines = []
-				
-				lines.each do |line|
-					# Skip headers
-					next if line.start_with?("#")
-					
-					# Skip empty lines until we find content
-					if !content_start && line.empty?
-						next
+					if owner && owner.values_at("ecosystem", "package") != ["gem", definition.specification.name]
+						raise ConflictError, "Skill #{definition.name.inspect} belongs to #{owner["ecosystem"]}:#{owner["package"]}"
 					end
 					
-					# Mark that we've found content
-					content_start = true
-					
-					# If we hit an empty line after finding content, we've reached the end of the first paragraph
-					if line.empty?
-						break
+					if (File.exist?(destination) || File.symlink?(destination)) && !owner
+						raise ConflictError, "Skill #{definition.name.inspect} is not managed by Agent Context"
 					end
-					
-					description_lines << line
 				end
-				
-				# Join the lines and truncate if too long
-				description = description_lines.join(" ").strip
-				
-				description
 			end
 		end
 	end

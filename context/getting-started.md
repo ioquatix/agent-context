@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide explains how to use `agent-context`, a tool for discovering and installing contextual information from Ruby gems to help AI agents.
+This guide explains how to install package guidance and skills using `agent-context`.
 
 ## Overview
 
@@ -37,6 +37,11 @@ bake agent:context:list --gem async
 
 # View a specific context file
 bake agent:context:show --gem async --file thread-safety
+
+# List, show, or install a skill through the context tasks
+bake agent:context:list --gem provider
+bake agent:context:show --gem provider --file workflow
+bake agent:context:install --gem provider
 ```
 
 ## Understanding context/ vs .agents/context/
@@ -49,9 +54,13 @@ bake agent:context:show --gem async --file thread-safety
 
 When you run `bake agent:context:install`, the tool:
 
-1. Scans all installed gems for `context/` directories (in the gem's root).
+1. Scans resolved project gems for `context/` directories (in the gem's root).
 2. Creates a `.agents/context/` directory in your current project.
-3. Copies context files organized by gem name.
+3. Copies ordinary context files organized by gem name.
+4. Installs metadata-declared skills and their resources into `.agents/skills/`.
+5. Updates local Git exclusions for installed context and dependency skills.
+
+Discover installed Markdown guides by listing files under `.agents/context/GEM/`. Repository instructions can direct agents to read the guides relevant to their task.
 
 For example:
 ```
@@ -89,8 +98,8 @@ async-gem/
 
 - Run `bake agent:context:install` to copy context to `.agents/context/` (with dot).
 - The `.agents/context/` directory is where installed context lives in your project.
-- Ignore the generated `.agents/` directory in version control.
-- Don't edit files in `.agents/context/` - they get completely replaced when you reinstall.
+- Installation maintains local Git exclusions for generated context and dependency-owned skills. Track project-owned instructions and skills under `.agents/` and remove blanket `/.agents/` ignore rules.
+- Edit provider sources and reinstall to update generated files in `.agents/context/`.
 
 ## Providing Context (For Gem Authors)
 
@@ -142,6 +151,8 @@ Available context files:
 
 #### 4. File format and content guidelines
 
+Use descriptive filenames, a clear heading, and an introduction for each Markdown guide. Link related guides so agents can follow them when they need more detail.
+
 Context files can be in any format, but `.md` is commonly used for documentation. The content should be:
 
 - **Practical** - Include real examples and working code.
@@ -155,6 +166,30 @@ Context files can be in any format, but `.md` is commonly used for documentation
 - Create a `context/` directory (no dot) in your gem's root.
 - Put helpful guides for users of your gem there.
 - Focus on practical usage, not API documentation.
+
+## Providing Skills
+
+To provide a skill, put a Markdown document directly inside `context/`:
+
+```markdown
+---
+metadata:
+  type: skill
+description: Follow the workflow when setting up this package.
+---
+
+# Workflow
+
+Follow the setup instructions.
+```
+
+`context/workflow.md` in gem `provider` defaults to `provider-workflow/SKILL.md`. An authored `name` is preserved and used as the installed directory name. The matching `context/workflow/` directory supplies resources. The generated instructions include additional skill metadata. Installed names must use lowercase ASCII letters, digits and single hyphens, with at most 64 characters. Descriptions must contain 1–1,024 characters.
+
+Include the complete source directories in your gem's packaged files. Skill documents and resource trees are installed under `.agents/skills/`.
+
+## Ownership and Updates
+
+Installed `SKILL.md` front matter records `metadata.type: skill` and the resolved `metadata.ecosystem`, `metadata.package`, and `metadata.version`. Ruby refreshes reconcile skills within their selected ecosystem and package scope. A full refresh also removes skills from removed or empty providers. After resolving an installation error, rerun the command to refresh generated files.
 
 ## Example Context Files
 

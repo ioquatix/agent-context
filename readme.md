@@ -1,6 +1,6 @@
 # Agent::Context
 
-Provides tools for installing and managing context files from Ruby gems for AI agents, and generating `agents.md` files following the <https://agents.md> specification.
+Provides tools for installing and managing context files and skills from Ruby gems for AI agents.
 
 [![Development Status](https://github.com/socketry/agent-context/workflows/Test/badge.svg)](https://github.com/socketry/agent-context/actions?workflow=Test)
 
@@ -8,7 +8,7 @@ Provides tools for installing and managing context files from Ruby gems for AI a
 
 This gem allows you to install and manage context files from other gems. Gems can provide context files in a `context/` directory in their root, which can contain documentation, configuration examples, migration guides, and other contextual information for AI agents.
 
-When you install context from gems, they are placed in the `.agents/context/` directory and an `agents.md` file is generated or updated to provide a comprehensive overview for AI agents.
+When you install context from gems, ordinary guides are placed in `.agents/context/` and dependency skills in `.agents/skills/`. Browse `.agents/context/GEM/` or use the list/show commands to find relevant guides.
 
 ## Quick Start
 
@@ -23,16 +23,16 @@ This workflow:
 
   - Adds the `agent-context` gem to your project.
   - Installs context files from all gems into `.agents/context/`.
-  - Generates or updates `agents.md` with a comprehensive overview.
-  - Follows the <https://agents.md> specification for agentic coding tools.
+  - Installs metadata-declared skills into `.agents/skills/`.
 
 ## Context
 
 This gem provides its own context files in the `context/` directory, including:
 
-  - `usage.md` - Comprehensive guide for using and providing context files.
+  - `getting-started.md` - Comprehensive guide for using and providing context files and skills.
+  - [`usage.md`](context/usage.md) - Agent instructions for finding dependency guidance and managing context and skills, installed as the `agent-context-usage` skill.
 
-When you install context from other gems, they will be placed in the `.agents/context/` directory and referenced in `agents.md`.
+When you install context from other gems, they will be placed in `.agents/context/`.
 
 ## Usage
 
@@ -52,7 +52,7 @@ $ bundle add agent-context
 
 #### Install Context (Primary Command)
 
-Install context from all available gems and update `agents.md`:
+Install ordinary context and skills from all available gems:
 
 ``` bash
 $ bake agent:context:install
@@ -86,13 +86,13 @@ Show the content of a specific context file:
 $ bake agent:context:show --gem async --file thread-safety
 ```
 
+The context list marks skill documents with `(skill)`, and the show and install tasks handle them alongside ordinary context. `agent-context` includes skill discovery and installation directly. Use it for Ruby dependency skills; the standalone `agent-skills` gem is deprecated.
+
 ## Version Control
 
-The `.agents/` directory contains generated files and should be excluded from version control. The generated `agents.md` index should be committed:
+In your repository instructions, direct agents to read relevant Markdown guides under `.agents/context/GEM/` and apply matching skills from `.agents/skills/`. Run installation after changing dependencies.
 
-  - `agents.md` is user-facing documentation that should be versioned.
-  - `.agents/context/` can be restored by running `bake agent:context:install`.
-  - Ignoring the entire `.agents/` directory covers other generated agent resources too.
+Installation maintains a marked block in the local Git exclude file, discovered through `git rev-parse --git-path info/exclude`. It excludes generated context, ownership files, and exact dependency-installed skill directories. Track project-owned instructions and skills under `.agents/`. Remove any blanket `/.agents/` rule from your project's `.gitignore` when adopting this layout. Re-run installation in each checkout.
 
 ## Providing Context in Your Gem
 
@@ -102,28 +102,38 @@ To provide context files in your gem, create a `context/` directory in your gem'
     ├── context/
     │   ├── getting-started.md
     │   ├── usage.md
-    │   ├── configuration.md
-    │   └── index.yaml (optional)
+    │   └── configuration.md
     ├── lib/
     └── your-gem.gemspec
 
-### Optional: Custom Index File
+Use descriptive filenames and focused Markdown guides. Agents find the installed files through directory listing and the list/show commands.
 
-You can provide a custom `index.yaml` file to control ordering and metadata:
+### Providing Skills
 
-``` yaml
-description: "Your gem description from gemspec"
-version: "1.0.0"
-files:
-  - path: getting-started.md
-    title: "Getting Started"
-    description: "Quick start guide"
-  - path: usage.md
-    title: "Usage Guide"
-    description: "Detailed usage instructions"
+A root-level context document can declare a skill:
+
+```markdown
+---
+metadata:
+  type: skill
+description: Run the provider's workflow when preparing a new project.
+license: MIT
+---
+
+# Workflow
+
+Follow these instructions.
 ```
 
-If no `index.yaml` is provided, one will be generated automatically from your gemspec and markdown files.
+`context/workflow.md` from gem `provider` defaults to `.agents/skills/provider-workflow/SKILL.md`. Resources in `context/workflow/` are copied alongside the instructions. Installed names have a 64-character limit; descriptions have a 1,024-character limit. The generated instructions include additional skill metadata.
+
+Skills are discovered through `metadata.type: skill` metadata in `context/*.md`, matching `bake-agent-context-rust`. Include `context/**/*` in your gem's file list. Authored skill names are preserved; missing names default to `<package>-<filename>`.
+
+## Ownership and Updates
+
+Installed `SKILL.md` front matter records `metadata.type: skill` and the resolved `metadata.ecosystem`, `metadata.package`, and `metadata.version`. Ruby refreshes reconcile skills within their selected ecosystem and package scope. A full refresh also removes skills from removed or empty providers. After resolving an installation error, rerun the command to refresh generated files.
+
+See [the portable specification](specification.md) and [Getting Started](guides/getting-started/readme.md).
 
 ## Releases
 
@@ -151,6 +161,8 @@ Please see the [project releases](https://ioquatix.github.io/agent-context/relea
 ## Contributing
 
 We welcome contributions to this project.
+
+Read the [architecture design](design.md) for the current Ruby and Rust boundaries and the proposed alignment work.
 
 1.  Fork the repository.
 2.  Create your feature branch (`git checkout -b my-new-feature`).

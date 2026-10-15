@@ -39,36 +39,36 @@ describe Agent::Context::Installer do
 		
 		it "can find gems with context" do
 			helper = subject.new(specifications: @specifications)
-			gems = helper.find_gems_with_context
+			gems = helper.providers
 			
 			expect(gems.length).to be == 1
-			expect(gems.first[:name]).to be == "fake-gem"
-			expect(gems.first[:version]).to be == "1.0.0"
-			expect(gems.first[:path]).to be == context_path
+			expect(gems.first.name).to be == "fake-gem"
+			expect(gems.first.version).to be == "1.0.0"
+			expect(gems.first.context_path).to be == context_path
+			expect(gems.first.definitions.length).to be == 2
 		end
 		
 		it "can find a specific gem with context" do
 			helper = subject.new(specifications: @specifications)
-			gem_info = helper.find_gem_with_context("fake-gem")
+			package = helper.find_provider("fake-gem")
 			
-			expect(gem_info).to be_truthy
-			expect(gem_info[:name]).to be == "fake-gem"
-			expect(gem_info[:path]).to be == context_path
+			expect(package).to be_truthy
+			expect(package.name).to be == "fake-gem"
+			expect(package.context_path).to be == context_path
+			expect(package.definitions.length).to be == 2
 		end
 		
 		it "returns nil for gems without context" do
 			helper = subject.new(specifications: @specifications)
-			gem_info = helper.find_gem_with_context("non-existent-gem")
-			expect(gem_info).to be_nil
+			package = helper.find_provider("non-existent-gem")
+			expect(package).to be_nil
 		end
 		
-		it "can list context files for a gem" do
+		it "can list context definitions for a gem" do
 			helper = subject.new(specifications: @specifications)
-			files = helper.list_context_files("fake-gem")
+			definitions = helper.find_provider("fake-gem").definitions
 			
-			expect(files.length).to be == 2
-			expect(files).to be(:include?, File.join(context_path, "getting-started.md"))
-			expect(files).to be(:include?, File.join(context_path, "configuration.md"))
+			expect(definitions.map{|definition| File.basename(definition.path)}).to be == ["configuration.md", "getting-started.md"]
 		end
 		
 		it "can show content of a specific context file" do
@@ -89,18 +89,6 @@ describe Agent::Context::Installer do
 			expect(content).to be_nil
 		end
 		
-		it "handles a malformed context index" do
-			File.write(File.join(context_path, "index.yaml"), "invalid: yaml: content: [")
-			
-			helper = subject.new(specifications: @specifications)
-			gem = helper.find_gem_with_context("fake-gem")
-			index = helper.send(:ensure_gem_index, gem, context_path)
-			
-			expect(index["description"]).to be == "A fake gem for testing"
-			expect(index["metadata"]).to be == {}
-			expect(index["files"]).to be == []
-		end
-		
 		with "installation" do
 			let(:target_path) {Dir.mktmpdir}
 			
@@ -116,8 +104,8 @@ describe Agent::Context::Installer do
 			it "can install context from a specific gem" do
 				helper = subject.new(root: @target_path, specifications: @specifications)
 				
-				result = helper.install_gem_context("fake-gem")
-				expect(result).to be_truthy
+				result = helper.install(gem: "fake-gem")
+				expect(result[:context]).to be(:include?, "fake-gem")
 				
 				target_context_path = File.join(@target_path, ".agents", "context", "fake-gem")
 				expect(helper.context_path).to be == File.join(@target_path, ".agents", "context")
@@ -131,17 +119,28 @@ describe Agent::Context::Installer do
 				expect(content).to be == "# Getting Started\n\nThis is a test."
 			end
 			
-			it "returns false for gems without context" do
+			it "reports a missing gem" do
 				helper = subject.new(specifications: @specifications)
-				result = helper.install_gem_context("non-existent-gem")
-				expect(result).to be_falsey
+				expect{helper.install(gem: "non-existent-gem")}.to raise_exception(Agent::Context::Error)
+			end
+			
+			it "installs dotfiles and files inside hidden context directories" do
+				File.write(File.join(context_path, ".env.example"), "SETTING=value\n")
+				FileUtils.mkdir_p(File.join(context_path, ".config"))
+				File.write(File.join(context_path, ".config/settings.yaml"), "setting: value\n")
+				helper = subject.new(root: @target_path, specifications: @specifications)
+				helper.install
+				
+				target = File.join(helper.context_path, "fake-gem")
+				expect(File.read(File.join(target, ".env.example"))).to be == "SETTING=value\n"
+				expect(File.read(File.join(target, ".config/settings.yaml"))).to be == "setting: value\n"
 			end
 			
 			it "can install context from all gems" do
 				helper = subject.new(root: @target_path, specifications: @specifications)
 				
-				installed = helper.install_all_context
-				expect(installed).to be(:include?, "fake-gem")
+				installed = helper.install
+				expect(installed[:context]).to be(:include?, "fake-gem")
 				
 				# Check that files were copied
 				target_context_path = File.join(@target_path, ".agents", "context", "fake-gem")
@@ -149,18 +148,15 @@ describe Agent::Context::Installer do
 				expect(File).to be(:exist?, File.join(target_context_path, "configuration.md"))
 			end
 			
-			it "generates metadata for minimally structured context" do
-				File.write(File.join(context_path, "notes.md"), "First paragraph.\n\nSecond paragraph.")
+			it "copies unfamiliar context types alongside skills" do
+				guide = "---\nmetadata:\n  type: guide\n---\n\n# Guide\n"
+				File.write(File.join(context_path, "guide.md"), guide)
+				File.write(File.join(context_path, "workflow.md"), "---\nmetadata:\n  type: skill\ndescription: Run the workflow.\n---\n\n# Workflow\n")
 				helper = subject.new(root: @target_path, specifications: @specifications)
 				
-				expect(helper.install_gem_context("fake-gem")).to be_truthy
-				
-				index_path = File.join(@target_path, ".agents", "context", "fake-gem", "index.yaml")
-				index = YAML.load_file(index_path)
-				notes = index["files"].find{|file| file["path"] == "notes.md"}
-				
-				expect(notes["title"]).to be == "Documentation"
-				expect(notes["description"]).to be == "First paragraph."
+				expect(helper.install).to be == {context: ["fake-gem"], skills: ["fake-gem-workflow"]}
+				expect(File.read(File.join(helper.context_path, "fake-gem/guide.md"))).to be == guide
+				expect(File.read(File.join(@target_path, ".agents/skills/fake-gem-workflow/SKILL.md"))).to be(:include?, "# Workflow")
 			end
 		end
 	end
@@ -186,13 +182,13 @@ describe Agent::Context::Installer do
 		
 		it "does not find gems without context" do
 			helper = subject.new(specifications: @specifications)
-			gems = helper.find_gems_with_context
+			gems = helper.providers
 			expect(gems.length).to be == 0
 		end
 		
 		it "returns nil for gems without context" do
 			helper = subject.new(specifications: @specifications)
-			gem_info = helper.find_gem_with_context("no-context-gem")
+			gem_info = helper.find_provider("no-context-gem")
 			expect(gem_info).to be_nil
 		end
 	end
