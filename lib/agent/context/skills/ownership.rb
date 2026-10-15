@@ -2,7 +2,6 @@
 
 # Released under the MIT License.
 # Copyright, 2026, by Shopify Inc.
-# Copyright, 2026, by Samuel Williams.
 
 require_relative "../document"
 require_relative "../errors"

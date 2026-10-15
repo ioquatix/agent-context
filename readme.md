@@ -139,7 +139,7 @@ See [the portable specification](specification.md) and [Getting Started](guides/
 
 Please see the [project releases](https://ioquatix.github.io/agent-context/releases/index) for all releases.
 
-### Unreleased
+### v0.4.0
 
   - Resolve context source filenames before installed skill names and show authored content consistently.
   - Install unfamiliar context types as ordinary guidance so providers can introduce new types.
