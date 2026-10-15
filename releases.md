@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-- Sign releases with the Socketry certificate and publish through reviewed GitHub release PRs.
-
 - Resolve context source filenames before installed skill names and show authored content consistently.
 
 - Install unfamiliar context types as ordinary guidance so providers can introduce new types.
