@@ -38,7 +38,7 @@ When you install context from other gems, they will be placed in `.agents/contex
 
 Please see the [project documentation](https://ioquatix.github.io/agent-context/) for more details.
 
-  - [Getting Started](https://ioquatix.github.io/agent-context/guides/getting-started/index) - This guide explains how to use `agent-context`, a tool for discovering and installing contextual information from Ruby gems to help AI agents.
+  - [Getting Started](https://ioquatix.github.io/agent-context/guides/getting-started/index) - This guide explains how to install package guidance and skills using `agent-context`.
 
 ### Installation
 
@@ -112,7 +112,7 @@ Use descriptive filenames and focused Markdown guides. Agents find the installed
 
 A root-level context document can declare a skill:
 
-```markdown
+``` markdown
 ---
 metadata:
   type: skill
@@ -138,6 +138,22 @@ See [the portable specification](specification.md) and [Getting Started](guides/
 ## Releases
 
 Please see the [project releases](https://ioquatix.github.io/agent-context/releases/index) for all releases.
+
+### Unreleased
+
+  - Sign releases with the Socketry certificate and publish through reviewed GitHub release PRs.
+
+  - Resolve context source filenames before installed skill names and show authored content consistently.
+
+  - Install unfamiliar context types as ordinary guidance so providers can introduce new types.
+
+  - Store resolved skill provenance in `SKILL.md` front matter under `metadata`, with `metadata.type: skill` declaring skills.
+
+  - Preserve authored names, descriptions, additional metadata, and the original Markdown body using native front matter AST nodes.
+
+  - Share loaded documents between context and skill installation, and use direct writes with rerunnable progress.
+
+  - Discover dependency guidance through installed Markdown files and the list/show commands. Remove generated indexes and the `agent:context:index` task.
 
 ### v0.3.0
 
@@ -180,11 +196,13 @@ $ bundle exec sus
 
 ### Making Releases
 
-To make a new release:
+To prepare a release branch and open a pull request from an up-to-date `main`:
 
 ``` bash
-$ bundle exec bake gem:release:patch # or minor or major
+$ bundle exec bake gem:github:release:patch # or minor or major
 ```
+
+See [bake-gem-github](https://github.com/socketry/bake-gem-github) for setup, remote releases, and recovery.
 
 ### Developer Certificate of Origin
 
